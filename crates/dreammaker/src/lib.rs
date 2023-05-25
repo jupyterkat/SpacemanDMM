@@ -1,18 +1,10 @@
 //! Parsing suite for DreamMaker, the language of the BYOND game engine.
 #![forbid(unsafe_code)]
 
-extern crate indexmap;
-extern crate interval_tree;
-extern crate lodepng;
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
 extern crate guard;
-extern crate ordered_float;
-extern crate serde;
-extern crate serde_derive;
-extern crate termcolor;
-extern crate toml;
 
 use std::borrow::Cow;
 use std::path::Path;

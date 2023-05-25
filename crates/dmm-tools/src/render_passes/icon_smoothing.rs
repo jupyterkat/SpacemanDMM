@@ -1,4 +1,5 @@
 //! Port of icon smoothing subsystem.
+use dreammaker as dm;
 
 use crate::dmi::Dir;
 use crate::minimap::{Atom, GetVar, Neighborhood, Sprite};

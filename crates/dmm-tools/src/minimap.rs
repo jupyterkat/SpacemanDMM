@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 use std::sync::RwLock;
 
+use dreammaker as dm;
 use ndarray::Axis;
 
 use crate::dmi::{self, Dir, Image};

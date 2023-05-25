@@ -7,22 +7,15 @@
 //! * https://github.com/rust-lang-nursery/rls
 #![deny(unsafe_code)]
 
-extern crate serde;
-extern crate serde_json;
-extern crate url;
 #[macro_use]
 extern crate serde_derive;
-extern crate dreamchecker;
-extern crate dreammaker as dm;
-extern crate interval_tree;
-extern crate jsonrpc_core as jsonrpc;
-extern crate libc;
-extern crate lsp_types;
 #[macro_use]
 extern crate guard;
-extern crate regex;
 #[macro_use]
 extern crate lazy_static;
+
+use dreammaker as dm;
+use jsonrpc_core as jsonrpc;
 
 #[macro_use]
 mod macros;
@@ -1320,6 +1313,7 @@ handle_method_call! {
                     all_commit_characters: None,
                     resolve_provider: None,
                     work_done_progress_options: Default::default(),
+                    completion_item: None,
                 }),
                 signature_help_provider: Some(SignatureHelpOptions {
                     trigger_characters: Some(vec!["(".to_owned(), ",".to_owned()]),
@@ -1347,7 +1341,7 @@ handle_method_call! {
     // ------------------------------------------------------------------------
     // actual stuff provision
     #[allow(deprecated)]  // DocumentSymbol::deprecated is... deprecated. But we need to provide a `None` anyways.
-    on WorkspaceSymbol(&mut self, params) {
+    on WorkspaceSymbolRequest(&mut self, params) {
         let query = symbol_search::Query::parse(&params.query);
 
         let query = match query {
@@ -1422,7 +1416,7 @@ handle_method_call! {
                 }
             }
         }
-        Some(results)
+        Some(WorkspaceSymbolResponse::Flat(results))
     }
 
     on HoverRequest(&mut self, params) {

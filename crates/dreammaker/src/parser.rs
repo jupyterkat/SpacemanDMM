@@ -779,7 +779,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                 if each == "var" {
                     var_type = Some(VarTypeBuilder::default());
                 } else if let Some(var_type) = var_type.as_mut() {
-                    if let Some(flag) = VarTypeFlags::from_name(each) {
+                    if let Some(flag) = VarTypeFlags::typeflag_from_name(each) {
                         var_type.flags |= flag;
                     } else {
                         var_type.type_path.push(each.to_owned());
@@ -929,7 +929,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                         .set_severity(Severity::Warning)
                         .register(self.context);
                 } else if let Some(mut var_type) = var_type.take() {
-                    if VarTypeFlags::from_name(last_part).is_some() {
+                    if VarTypeFlags::typeflag_from_name(last_part).is_some() {
                         self.error(format!("`var/{};` item has no effect", last_part))
                             .set_severity(Severity::Warning)
                             .register(self.context);

@@ -1114,7 +1114,7 @@ impl ObjectTreeBuilder {
                 Some(name) => name,
                 None => return Ok(None), // var{} block, children will be real vars
             };
-            while let Some(flag) = VarTypeFlags::from_name(prev) {
+            while let Some(flag) = VarTypeFlags::typeflag_from_name(prev) {
                 if let Some(name) = rest.next() {
                     flags |= flag;
                     prev = name;

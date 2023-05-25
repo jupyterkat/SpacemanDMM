@@ -1,6 +1,7 @@
 use crate::minimap::{Atom, GetVar, Layer, Neighborhood, Sprite};
 use dm::constants::Constant;
 use dm::objtree::*;
+use dreammaker as dm;
 
 mod icon_smoothing;
 mod icon_smoothing_2020;

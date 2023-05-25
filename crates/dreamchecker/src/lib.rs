@@ -4,11 +4,11 @@
 #[macro_use]
 extern crate guard;
 
-extern crate dreammaker as dm;
 use dm::ast::*;
 use dm::constants::{ConstFn, Constant};
 use dm::objtree::{ObjectTree, ProcRef, TypeRef};
 use dm::{Context, DMError, Location, Severity};
+use dreammaker as dm;
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 

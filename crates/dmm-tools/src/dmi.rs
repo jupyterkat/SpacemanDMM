@@ -1,6 +1,7 @@
 //! DMI metadata and image composition.
 //!
 //! Includes re-exports from `dreammaker::dmi`.
+use dreammaker as dm;
 
 use bytemuck::Pod;
 use std::io;
@@ -165,7 +166,7 @@ impl Image {
     /// Prefer to call `IconFile::from_file`, which can read both metadata and
     /// image contents at one time.
     pub fn from_file(path: &Path) -> io::Result<Image> {
-        let path = &::dm::fix_case(path);
+        let path = &dm::fix_case(path);
         Self::from_bytes(&std::fs::read(path)?)
     }
 

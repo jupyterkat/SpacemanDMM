@@ -246,8 +246,9 @@ pub fn register_builtins(tree: &mut ObjectTreeBuilder) {
     }
 
     builtins_table! {
-        #[dm_ref("/DM/vars")]
-        var/const/vars;
+        #[dm_ref("/DM/vars")] {
+            var/const/vars;
+        }
 
         // enum /atom/var/dir
         #[dm_ref("/atom/var/dir")] {

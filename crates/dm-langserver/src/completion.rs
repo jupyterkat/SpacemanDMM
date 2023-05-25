@@ -2,6 +2,7 @@
 
 use std::collections::HashSet;
 
+use dreammaker as dm;
 use lsp_types::*;
 
 use dm::annotation::Annotation;

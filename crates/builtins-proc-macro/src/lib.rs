@@ -67,7 +67,7 @@ impl EntryBody {
             let content;
             parenthesized!(content in input);
             Ok(EntryBody::Proc(
-                content.parse_terminated(ProcArgument::parse)?,
+                content.parse_terminated(ProcArgument::parse, Token![,])?,
             ))
         } else if path.iter().any(|i| i == "var") {
             Ok(EntryBody::Variable(None))
@@ -160,15 +160,16 @@ pub fn builtins_table(input: TokenStream) -> TokenStream {
         let mut attr_calls = TokenStream2::new();
         for attr in entry.header.attrs {
             let attr_span = attr.span();
-            let path = attr.path;
+            let path = attr.path();
             let ident = &path.segments.last().unwrap().ident;
+            let dm_ref = attr.meta.require_list().expect("no list").tokens.clone();
             if ident == "doc" {
                 markdown_span = Some(attr_span);
-                markdown.push_str(&syn::parse2::<DocComment>(attr.tokens).unwrap().0.value());
+                markdown.push_str(&syn::parse2::<DocComment>(dm_ref).unwrap().0.value());
                 markdown.push('\n');
             } else {
                 attr_calls.extend(quote_spanned! { attr_span => .docs.#path });
-                attr_calls.extend(attr.tokens);
+                attr_calls.extend(quote_spanned! { attr_span => (#dm_ref)});
             }
         }
 

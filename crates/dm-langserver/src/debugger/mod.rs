@@ -5,6 +5,8 @@
 // In BYOND references 0xAA_BBBBBB, A is the the type and B is the instance ID.
 #![allow(clippy::unusual_byte_groupings)]
 
+use dreammaker as dm;
+
 macro_rules! output {
     (in $seq:expr, $fmt:expr) => {
         $seq.println($fmt)

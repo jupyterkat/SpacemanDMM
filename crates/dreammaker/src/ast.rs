@@ -398,6 +398,7 @@ macro_rules! type_table {
 
 type_table! {
     /// A type specifier for verb arguments and input() calls.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct InputType;
 
     // These values can be known with an invocation such as:
@@ -421,7 +422,7 @@ type_table! {
 }
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Default, PartialEq, Eq, Debug, Clone)]
     pub struct VarTypeFlags: u8 {
         // DM flags
         const STATIC = 1 << 0;
@@ -435,7 +436,7 @@ bitflags! {
 }
 
 impl VarTypeFlags {
-    pub fn from_name(name: &str) -> Option<VarTypeFlags> {
+    pub fn typeflag_from_name(name: &str) -> Option<VarTypeFlags> {
         match name {
             // DM flags
             "global" | "static" => Some(VarTypeFlags::STATIC),
@@ -1059,7 +1060,7 @@ pub struct Parameter {
 impl fmt::Display for Parameter {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}{}", self.var_type, self.name)?;
-        if let Some(input_type) = self.input_type {
+        if let Some(input_type) = &self.input_type {
             write!(fmt, " as {}", input_type)?;
         }
         Ok(())
@@ -1130,7 +1131,7 @@ impl FromIterator<String> for VarTypeBuilder {
         let type_path = iter
             .into_iter()
             .skip_while(|p| {
-                if let Some(flag) = VarTypeFlags::from_name(p) {
+                if let Some(flag) = VarTypeFlags::typeflag_from_name(p) {
                     flags |= flag;
                     true
                 } else {

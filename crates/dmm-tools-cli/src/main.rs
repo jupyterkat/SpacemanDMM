@@ -2,16 +2,10 @@
 #![forbid(unsafe_code)]
 #![doc(hidden)] // Don't interfere with lib docs.
 
-extern crate rayon;
-extern crate structopt;
-
-extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate dmm_tools;
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 use std::collections::HashMap;
 use std::collections::HashSet;

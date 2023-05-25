@@ -3,6 +3,7 @@
 //! https://github.com/tgstation/tgstation/pull/52864
 //! followed by
 //! https://github.com/tgstation/tgstation/pull/53906
+use dreammaker as dm;
 
 use crate::dmi::Dir;
 use crate::minimap::{Atom, GetVar, Neighborhood, Sprite};

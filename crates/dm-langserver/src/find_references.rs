@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 
+use dreammaker as dm;
+
 use dm::ast::*;
 use dm::objtree::*;
 use dm::Location;

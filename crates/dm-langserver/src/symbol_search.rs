@@ -1,4 +1,5 @@
 //! Query parser and evaluator for workspace symbol search.
+use dreammaker as dm;
 
 /// A parsed symbol query.
 #[derive(Debug)]
