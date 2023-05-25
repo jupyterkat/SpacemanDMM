@@ -214,7 +214,7 @@ impl Constant {
 
     pub fn as_str(&self) -> Option<&str> {
         match *self {
-            Constant::String(ref s) => Some(s.as_ref()),
+            Constant::String(ref s) => Some(s),
             _ => None,
         }
     }
@@ -253,7 +253,7 @@ impl Constant {
 
     pub fn contains_key(&self, key: &Constant) -> bool {
         if let Constant::List(ref elements) = *self {
-            for &(ref k, _) in elements.iter() {
+            for (k, _) in elements.iter() {
                 if key == k {
                     return true;
                 }
@@ -265,11 +265,11 @@ impl Constant {
     pub fn index(&self, key: &Constant) -> Option<&Constant> {
         match (self, key) {
             // Narrowing conversion is intentional.
-            (&Constant::List(ref elements), &Constant::Float(i)) => {
-                return elements.get(i as usize).map(|&(ref k, _)| k)
+            (Constant::List(elements), &Constant::Float(i)) => {
+                return elements.get(i as usize).map(|(k, _)| k)
             }
-            (&Constant::List(ref elements), key) => {
-                for &(ref k, ref v) in elements.iter() {
+            (Constant::List(elements), key) => {
+                for (k, v) in elements.iter() {
                     if key == k {
                         return v.as_ref();
                     }
@@ -373,7 +373,7 @@ impl fmt::Display for Constant {
                 write!(f, "list(")?;
                 let mut first = true;
                 let mut previous_assoc = false;
-                for &(ref key, ref val) in list.iter() {
+                for (key, val) in list.iter() {
                     if !first {
                         write!(f, ",")?;
                         if previous_assoc {
@@ -808,7 +808,7 @@ impl<'a> ConstantFolder<'a> {
                         )));
                     }
                     match args[0].as_term() {
-                        Some(Term::Ident(ref ident)) => Constant::from(defines.contains_key(ident)),
+                        Some(Term::Ident(ident)) => Constant::from(defines.contains_key(ident)),
                         _ => {
                             return Err(self
                                 .error("malformed defined() call, argument given isn't an Ident."))
@@ -855,7 +855,7 @@ impl<'a> ConstantFolder<'a> {
             let path: TreePath = prefab
                 .path
                 .iter()
-                .map(|&(_, ref name)| name.to_owned())
+                .map(|(_, name)| name.to_owned())
                 .collect();
             return Ok(Pop { path, vars });
         }

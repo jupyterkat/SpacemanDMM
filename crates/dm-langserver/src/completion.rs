@@ -184,7 +184,7 @@ impl<'a> Engine<'a> {
         // follow the path ops until we hit 'proc' or 'verb'
         let mut iter = parts.iter();
         let mut decl = None;
-        for &(op, ref name) in iter.by_ref() {
+        for (op, name) in iter.by_ref() {
             if name == "proc" {
                 decl = Some("proc");
                 break;
@@ -192,7 +192,7 @@ impl<'a> Engine<'a> {
                 decl = Some("verb");
                 break;
             }
-            if let Some(next) = ty.navigate(op, name) {
+            if let Some(next) = ty.navigate(*op, name) {
                 ty = next;
             } else {
                 break;
@@ -424,7 +424,7 @@ impl<'a> Engine<'a> {
         // macros
         if let Some(ref defines) = self.defines {
             // TODO: verify that the macro is in scope at the location
-            for (_, &(ref name, ref define)) in defines.iter() {
+            for (_, (name, define)) in defines.iter() {
                 if contains(name, query) {
                     results.push(CompletionItem {
                         label: name.to_owned(),

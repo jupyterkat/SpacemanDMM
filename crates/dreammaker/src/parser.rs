@@ -1942,7 +1942,6 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
             expr = require!(self.expression_part(
                 expr,
                 info,
-                strength,
                 in_ternary || info.strength == Strength::Conditional
             ));
         }
@@ -1953,7 +1952,6 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
         &mut self,
         lhs: Expression,
         prev_op: OpInfo,
-        strength: Option<Strength>,
         in_ternary: bool,
     ) -> Status<Expression> {
         use std::cmp::Ordering;
@@ -1979,7 +1977,6 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                     rhs = require!(self.expression_part(
                         rhs,
                         info,
-                        strength,
                         in_ternary || info.strength == Strength::Conditional
                     ));
                 }

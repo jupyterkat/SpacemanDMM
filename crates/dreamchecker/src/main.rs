@@ -1,7 +1,6 @@
 //! DreamChecker, a robust static analysis and typechecking engine for
 //! DreamMaker.
 
-use dreamchecker;
 use dreammaker as dm;
 #[macro_use]
 extern crate serde_json;

@@ -4,13 +4,13 @@ extern crate git2;
 use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::process::Command;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main() {
     // build info
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    let mut f = File::create(&out_dir.join("build-info.txt")).unwrap();
+    let mut f = File::create(out_dir.join("build-info.txt")).unwrap();
 
     if let Ok(commit) = read_commit() {
         writeln!(f, "commit: {}", commit).unwrap();
@@ -21,7 +21,7 @@ fn main() {
     if cfg!(windows) {
         let out_dir = env::var("OUT_DIR").ok().expect("can't find out_dir");
 
-        if cfg!(target_env="msvc") {
+        if cfg!(target_env = "msvc") {
             if let Err(e) = Command::new("windres")
                 .args(&["res/editor.rc", "-o"])
                 .arg(&format!("{}/editor_rc.lib", out_dir))

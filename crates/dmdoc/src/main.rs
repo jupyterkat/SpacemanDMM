@@ -752,7 +752,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                 &tera::Context::from_serialize(Index {
                     env,
                     html: index_docs.as_ref().map(|(_, docs)| &docs.html[..]),
-                    modules: build_index_tree(modules.iter().map(|(_path, module)| IndexTree {
+                    modules: build_index_tree(modules.values().map(|module| IndexTree {
                         htmlname: &module.htmlname,
                         full_name: &module.htmlname,
                         self_name: match module.name {
@@ -1071,9 +1071,9 @@ fn broken_link_fixer<'str>(
                 );
             }
             if let Some(proc_name) = proc_name {
-                let _ = eprint!("/proc/{}", proc_name);
+                eprint!("/proc/{}", proc_name);
             } else if let Some(var_name) = var_name {
-                let _ = eprint!("/var/{}", var_name);
+                eprint!("/var/{}", var_name);
             }
             eprintln!("]");
             progress.truncate(best);

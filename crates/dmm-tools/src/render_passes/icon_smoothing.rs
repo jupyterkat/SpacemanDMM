@@ -124,7 +124,7 @@ fn find_type_in_direction(
     }
 
     match source.get_var("canSmoothWith", objtree) {
-        &Constant::List(ref elements) => {
+        Constant::List(elements) => {
             if smooth_flags & SMOOTH_MORE != 0 {
                 // smooth with canSmoothWith + subtypes
                 for atom in atom_list {

@@ -906,7 +906,7 @@ impl<'a> Engine<'a> {
             self.get_annotations(&text_document_position.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: text_document_position.position.line as u32 + 1,
+            line: text_document_position.position.line + 1,
             column: text_document_position.position.character as u16 + 1,
         };
 
@@ -1351,7 +1351,7 @@ handle_method_call! {
 
         let mut results = Vec::new();
         if let Some(ref defines) = self.defines {
-            for (range, &(ref name, ref define)) in defines.iter() {
+            for (range, (name, define)) in defines.iter() {
                 if query.matches_define(name) {
                     results.push(SymbolInformation {
                         name: name.to_owned(),
@@ -1424,7 +1424,7 @@ handle_method_call! {
         let (_, file_id, annotations) = self.get_annotations(&tdp.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: tdp.position.line as u32 + 1,
+            line: tdp.position.line + 1,
             column: tdp.position.character as u16 + 1,
         };
         let symbol_id = self.symbol_id_at(tdp)?;
@@ -1548,11 +1548,9 @@ handle_method_call! {
                     let next = self.find_scoped_type(&iter, priors);
                     results.append(&mut self.construct_var_hover(var_name, next, true)?);
                 }
-                Annotation::MacroUse { docs, .. } => {
-                    if let Some(dc) = docs {
-                        if !dc.is_empty() {
-                            results.push(dc.text());
-                        }
+                Annotation::MacroUse { docs: Some(dc) , .. } => {
+                    if !dc.is_empty() {
+                        results.push(dc.text());
                     }
                 }
                 _ => {}
@@ -1573,7 +1571,7 @@ handle_method_call! {
         let (real_file_id, file_id, annotations) = self.get_annotations(&tdp.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: tdp.position.line as u32 + 1,
+            line: tdp.position.line + 1,
             column: tdp.position.character as u16 + 1,
         };
         let mut results = Vec::new();
@@ -1704,7 +1702,7 @@ handle_method_call! {
         let (_, file_id, annotations) = self.get_annotations(&tdp.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: tdp.position.line as u32 + 1,
+            line: tdp.position.line + 1,
             column: tdp.position.character as u16 + 1,
         };
 
@@ -1801,7 +1799,7 @@ handle_method_call! {
         let (_, file_id, annotations) = self.get_annotations(&params.text_document_position.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: params.text_document_position.position.line as u32 + 1,
+            line: params.text_document_position.position.line + 1,
             column: params.text_document_position.position.character as u16 + 1,
         };
         let iter = annotations.get_location(location);
@@ -1878,7 +1876,7 @@ handle_method_call! {
         let (_, file_id, annotations) = self.get_annotations(&tdp.text_document.uri)?;
         let location = dm::Location {
             file: file_id,
-            line: tdp.position.line as u32 + 1,
+            line: tdp.position.line + 1,
             column: tdp.position.character as u16 + 1,
         };
         let iter = annotations.get_location(location);
@@ -2121,7 +2119,7 @@ handle_method_call! {
                     Annotation::Include(path) |
                     Annotation::Resource(path) => {
                         let pathbuf = if path.is_relative() {
-                            std::env::current_dir().map_err(invalid_request)?.join(&path)
+                            std::env::current_dir().map_err(invalid_request)?.join(path)
                         } else {
                             path.to_owned()
                         };
@@ -2297,7 +2295,7 @@ fn is_constructor_name(name: &str) -> bool {
 
 fn location_to_position(loc: dm::Location) -> lsp_types::Position {
     lsp_types::Position {
-        line: loc.line.saturating_sub(1) as u32,
+        line: loc.line.saturating_sub(1),
         character: loc.column.saturating_sub(1) as u32,
     }
 }

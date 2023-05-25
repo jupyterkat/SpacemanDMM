@@ -243,7 +243,7 @@ impl DefineMap {
     /// Cut a DefineMap from the state of a DefineHistory at the given location.
     fn from_history(history: &InnerDefineHistory, location: Location) -> DefineMap {
         let mut map = DefineMap::default();
-        for (range, &(ref name, ref define)) in history.range(range(location, location)) {
+        for (range, (name, define)) in history.range(range(location, location)) {
             map.insert(name.clone(), (range.start, define.clone()));
         }
         map
@@ -335,19 +335,20 @@ impl<'ctx> Iterator for IncludeStack<'ctx> {
     fn next(&mut self) -> Option<LocatedToken> {
         loop {
             match self.stack.last_mut() {
-                Some(&mut Include::File { ref mut lexer, .. }) => match lexer.next() {
-                    //Some(Err(e)) => return Some(Err(e)),
-                    Some(t) => return Some(t),
-                    None => {} // fall through
-                },
+                Some(&mut Include::File { ref mut lexer, .. }) => {
+                    if let Some(t) = lexer.next() {
+                        return Some(t);
+                    }
+                }
                 Some(&mut Include::Expansion {
                     ref mut tokens,
                     location,
                     ..
-                }) => match tokens.pop_front() {
-                    Some(token) => return Some(LocatedToken { location, token }),
-                    None => {} // fall through
-                },
+                }) => {
+                    if let Some(token) = tokens.pop_front() {
+                        return Some(LocatedToken { location, token });
+                    }
+                }
                 None => return None,
             }
             self.stack.pop();
@@ -420,7 +421,7 @@ pub struct Preprocessor<'ctx> {
 impl<'ctx> HasLocation for Preprocessor<'ctx> {
     fn location(&self) -> Location {
         match self.include_stack.stack.last() {
-            Some(&Include::File { ref lexer, .. }) => lexer.location(),
+            Some(Include::File { lexer, .. }) => lexer.location(),
             Some(&Include::Expansion { location, .. }) => location,
             None => Location::default(),
         }
@@ -1136,7 +1137,7 @@ impl<'ctx> Preprocessor<'ctx> {
 
                 match expansion {
                     Some((location, Define::Constant { subst, docs })) => {
-                        self.annotate_macro(ident, location, Some(docs.clone()));
+                        self.annotate_macro(ident, location, Some(docs));
                         self.include_stack.stack.push(Include::Expansion {
                             //name: ident.to_owned(),
                             tokens: subst.into_iter().collect(),
@@ -1168,7 +1169,7 @@ impl<'ctx> Preprocessor<'ctx> {
                             }
                         }
 
-                        self.annotate_macro(ident, location, Some(docs.clone()));
+                        self.annotate_macro(ident, location, Some(docs));
 
                         // read arguments
                         let mut args = Vec::new();
@@ -1278,48 +1279,48 @@ impl<'ctx> Preprocessor<'ctx> {
                                     // read the next ident and concat it into the previous ident
                                 }
                                 // hash = must be followed by a param name, stringify the whole argument
-                                Token::Punct(Punctuation::Hash) => {
-                                    match input.next() {
-                                        Some(Token::Ident(argname, _)) => {
-                                            match params.iter().position(|x| *x == argname) {
-                                                Some(i) => {
-                                                    let mut string = String::new();
-                                                    for each in &args[i] {
-                                                        use std::fmt::Write;
-                                                        if !string.is_empty() {
-                                                            string.push(' ');
-                                                        }
-                                                        let _e = write!(string, "{}", each);
-                                                        #[cfg(debug_assertions)]
-                                                        {
-                                                            _e.unwrap();
-                                                        }
+                                Token::Punct(Punctuation::Hash) => match input.next() {
+                                    Some(Token::Ident(argname, _)) => {
+                                        match params.iter().position(|x| *x == argname) {
+                                            Some(i) => {
+                                                let mut string = String::new();
+                                                for each in &args[i] {
+                                                    use std::fmt::Write;
+                                                    if !string.is_empty() {
+                                                        string.push(' ');
                                                     }
-                                                    expansion.push_back(Token::String(string));
+                                                    let _e = write!(string, "{}", each);
+                                                    #[cfg(debug_assertions)]
+                                                    {
+                                                        _e.unwrap();
+                                                    }
                                                 }
-                                                None => return Err(DMError::new(
+                                                expansion.push_back(Token::String(string));
+                                            }
+                                            None => {
+                                                return Err(DMError::new(
                                                     self.last_input_loc,
                                                     format!(
                                                         "can't stringify non-argument ident {:?}",
                                                         argname
                                                     ),
-                                                )),
+                                                ))
                                             }
                                         }
-                                        Some(tok) => {
-                                            return Err(DMError::new(
-                                                self.last_input_loc,
-                                                format!("can't stringify non-ident '{}'", tok),
-                                            ))
-                                        }
-                                        None => {
-                                            return Err(DMError::new(
-                                                self.last_input_loc,
-                                                "can't stringify EOF",
-                                            ))
-                                        }
                                     }
-                                }
+                                    Some(tok) => {
+                                        return Err(DMError::new(
+                                            self.last_input_loc,
+                                            format!("can't stringify non-ident '{}'", tok),
+                                        ))
+                                    }
+                                    None => {
+                                        return Err(DMError::new(
+                                            self.last_input_loc,
+                                            "can't stringify EOF",
+                                        ))
+                                    }
+                                },
                                 _ => expansion.push_back(token),
                             }
                         }

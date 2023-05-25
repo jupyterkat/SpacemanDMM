@@ -5,9 +5,9 @@ use std::ops::Range;
 
 use pulldown_cmark::{self, BrokenLinkCallback, Event, HeadingLevel, Parser, Tag};
 
-pub fn render<'string, 'func>(
+pub fn render<'string>(
     markdown: &'string str,
-    broken_link_callback: BrokenLinkCallback<'string, 'func>,
+    broken_link_callback: BrokenLinkCallback<'string, '_>,
 ) -> String {
     let mut buf = String::new();
     push_html(&mut buf, parser(markdown, broken_link_callback));
@@ -23,16 +23,16 @@ pub struct DocBlock {
 }
 
 impl DocBlock {
-    pub fn parse<'string, 'func>(
+    pub fn parse<'string>(
         markdown: &'string str,
-        broken_link_callback: BrokenLinkCallback<'string, 'func>,
+        broken_link_callback: BrokenLinkCallback<'string, '_>,
     ) -> Self {
         parse_main(parser(markdown, broken_link_callback).peekable())
     }
 
-    pub fn parse_with_title<'string, 'func>(
+    pub fn parse_with_title<'string>(
         markdown: &'string str,
-        broken_link_callback: BrokenLinkCallback<'string, 'func>,
+        broken_link_callback: BrokenLinkCallback<'string, '_>,
     ) -> (Option<String>, Self) {
         let mut parser = parser(markdown, broken_link_callback).peekable();
         (

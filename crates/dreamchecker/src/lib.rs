@@ -199,12 +199,9 @@ impl<'o> AssumptionSet<'o> {
     }
 
     fn conflicts_with(&self, new: &Assumption) -> Option<&Assumption> {
-        for each in self.set.iter() {
-            if each.oneway_conflict(new) || new.oneway_conflict(each) {
-                return Some(each);
-            }
-        }
-        None
+        self.set
+            .iter()
+            .find(|&each| each.oneway_conflict(new) || new.oneway_conflict(each))
     }
 }
 
@@ -1788,16 +1785,16 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 if name != "waitfor" {
                     return ControlFlow::allfalse();
                 }
-                match match value.as_term() {
-                    Some(Term::Int(0)) => Some(true),
-                    Some(Term::Ident(i)) if i == "FALSE" => Some(true),
-                    _ => None,
-                } {
-                    Some(_) => {
+
+                match value.as_term() {
+                    Some(Term::Int(0)) => {
                         self.env.waitfor_procs.insert(self.proc_ref);
                     }
-                    None => (),
-                }
+                    Some(Term::Ident(i)) if i == "FALSE" => {
+                        self.env.waitfor_procs.insert(self.proc_ref);
+                    }
+                    _ => (),
+                };
             }
             Statement::Setting { .. } => {}
             Statement::Spawn { delay, block } => {
@@ -2636,19 +2633,16 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 );
             }
         }
-        let typeerror;
-        match rhs.static_ty {
+        let typeerror = match rhs.static_ty {
             StaticType::None => return Analysis::empty(),
             StaticType::Type(typeref) => {
                 // Its been overloaded, assume they really know they want to do this
                 if let Some(proc) = typeref.get_proc(operator) {
                     return self.visit_call(location, typeref, proc, &[], true, local_vars);
                 }
-                typeerror = typeref.get().pretty_path();
+                typeref.get().pretty_path()
             }
-            StaticType::List { list, .. } => {
-                typeerror = "list";
-            }
+            StaticType::List { list, .. } => "list",
         };
         error(
             location,
