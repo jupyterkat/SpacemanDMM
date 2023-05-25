@@ -6,22 +6,22 @@ edition = "2018"
 
 [dependencies]
 url = "2.3.1"
-serde = "1.0.144"
-serde_json = "1.0.85"
-serde_derive = "1.0.144"
+serde = "1.0.163"
+serde_json = "1.0.96"
+serde_derive = "1.0.163"
 bincode = "1.3.3"
 jsonrpc-core = "18.0.0"
-lsp-types = "0.93.1"
+lsp-types = "0.94.0"
 dap-types = { path = "../dap-types" }
 dreammaker = { path = "../dreammaker" }
 dreamchecker = { path = "../dreamchecker" }
 interval-tree = { path = "../interval-tree" }
-libc = "0.2.132"
+libc = "0.2.144"
 guard = "0.5.1"
-regex = "1.6.0"
+regex = "1.8.2"
 lazy_static = "1.4"
-ahash = "0.8.0"
+ahash = "0.8.3"
 
 [build-dependencies]
-chrono = "0.4.22"
-git2 = { version = "0.16.1", default-features = false }
+chrono = "0.4.24"
+git2 = { version = "0.17.1", default-features = false }
