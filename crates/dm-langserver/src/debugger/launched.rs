@@ -163,7 +163,7 @@ fn pipe_output<R: std::io::Read + Send + 'static>(
     keyword: &'static str,
     stream: Option<R>,
 ) -> std::io::Result<()> {
-    guard!(let Some(stream2) = stream else { return Ok(()); });
+    let Some(stream2) = stream else { return Ok(()); };
     std::thread::Builder::new()
         .name(format!("launched debuggee {} relay", keyword))
         .spawn(move || {

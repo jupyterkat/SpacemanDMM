@@ -10,8 +10,6 @@
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate guard;
-#[macro_use]
 extern crate lazy_static;
 
 use dreammaker as dm;
@@ -180,7 +178,7 @@ impl DiagnosticsTracker {
             } else {
                 let mut notes = Vec::with_capacity(error.notes().len());
                 for note in error.notes().iter() {
-                    guard!(let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue });
+                    let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue };
                     notes.push(lsp_types::DiagnosticRelatedInformation {
                         location: lsp_types::Location {
                             uri,
@@ -200,7 +198,7 @@ impl DiagnosticsTracker {
                 related_information,
                 ..Default::default()
             };
-            guard!(let Some(uri) = DiagnosticsTracker::file_url(root, file_list, loc.file) else { continue });
+            let Some(uri) = DiagnosticsTracker::file_url(root, file_list, loc.file) else { continue };
             map.entry(uri).or_insert_with(Default::default).push(diag);
 
             if !related_info {
@@ -213,7 +211,7 @@ impl DiagnosticsTracker {
                         source: component_to_source(error.component()),
                         ..Default::default()
                     };
-                    guard!(let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue });
+                    let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue };
                     map.entry(uri).or_insert_with(Default::default).push(diag);
                 }
             }

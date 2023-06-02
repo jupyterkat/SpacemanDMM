@@ -3,8 +3,6 @@
 
 #[macro_use]
 extern crate bitflags;
-#[macro_use]
-extern crate guard;
 
 use std::borrow::Cow;
 use std::path::Path;

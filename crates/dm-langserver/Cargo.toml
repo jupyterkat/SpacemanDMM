@@ -17,11 +17,10 @@ dreammaker = { path = "../dreammaker" }
 dreamchecker = { path = "../dreamchecker" }
 interval-tree = { path = "../interval-tree" }
 libc = "0.2.144"
-guard = "0.5.1"
-regex = "1.8.2"
+regex = "1.8.3"
 lazy_static = "1.4"
 ahash = "0.8.3"
 
 [build-dependencies]
-chrono = "0.4.24"
-git2 = { version = "0.17.1", default-features = false }
+chrono = "0.4.26"
+git2 = { version = "0.17.2", default-features = false }

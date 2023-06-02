@@ -212,7 +212,7 @@ impl Image {
                         mul255(src[$i], color[$i])
                     };
                 }
-                let mut dst = &mut self_dat[(y * self.width + x) as usize];
+                let dst = &mut self_dat[(y * self.width + x) as usize];
                 let src_tint = Rgba8::new(tint!(0), tint!(1), tint!(2), tint!(3));
 
                 // out_A = src_A + dst_A (1 - src_A)

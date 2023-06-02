@@ -1,8 +1,6 @@
 //! DreamChecker, a robust static analysis and typechecking engine for
 //! DreamMaker.
 #![allow(dead_code, unused_variables)]
-#[macro_use]
-extern crate guard;
 
 use dm::ast::*;
 use dm::constants::{ConstFn, Constant};
@@ -1147,11 +1145,11 @@ pub fn check_var_defs(objtree: &ObjectTree, context: &Context) {
                     continue;
                 }
 
-                guard!(let Some(parentvar) = parent.vars.get(varname)
-                    else { continue });
+                let Some(parentvar) = parent.vars.get(varname)
+                    else { continue };
 
-                guard!(let Some(decl) = &parentvar.declaration
-                    else { continue });
+                let Some(decl) = &parentvar.declaration
+                    else { continue };
 
                 if let Some(mydecl) = &typevar.declaration {
                     if typevar.value.location.is_builtins() {
@@ -2687,7 +2685,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
         bit_op: BinaryOp,
         bool_op: BinaryOp,
     ) {
-        guard!(let Expression::Base { follow, .. } = lhs else { return });
+        let Expression::Base { follow, .. } = lhs else { return };
         let any_not = follow
             .iter()
             .any(|f| matches!(f.elem, Follow::Unary(UnaryOp::Not)));
@@ -2963,23 +2961,23 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
         // TODO: some filters have limits for their numerical params
         //  eg "rays" type "threshold" param defaults to 0.5, can be 0 to 1
         if proc.ty().is_root() && proc.name() == "filter" {
-            guard!(let Some(typename) = param_name_map.get("type") else {
+            let Some(typename) = param_name_map.get("type") else {
                 if !arglist_used {
                     error(location, "filter() called without mandatory keyword parameter 'type'")
                         .register(self.context);
                 } // regardless, we're done here
                 return Analysis::empty()
-            });
-            guard!(let Some(Constant::String(typevalue)) = &typename.value else {
+            };
+            let Some(Constant::String(typevalue)) = &typename.value else {
                 error(location, format!("filter() called with non-string type keyword parameter value '{:?}'", typename.value))
                     .register(self.context);
                 return Analysis::empty()
-            });
-            guard!(let Some(arglist) = VALID_FILTER_TYPES.get(typevalue) else {
+            };
+            let Some(arglist) = VALID_FILTER_TYPES.get(typevalue) else {
                 error(location, format!("filter() called with invalid type keyword parameter value '{}'", typevalue))
                     .register(self.context);
                 return Analysis::empty()
-            });
+            };
             for arg in param_name_map.keys() {
                 if *arg != "type" && !arglist.iter().any(|&x| x == *arg) {
                     error(

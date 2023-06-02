@@ -365,7 +365,7 @@ impl Debugger {
         match &mut self.client {
             DebugClient::Extools(extools) => {
                 let keys: Vec<_> = {
-                    guard!(let Ok(extools) = extools.get() else { return });
+                    let Ok(extools) = extools.get() else { return };
                     extools
                         .get_all_threads()
                         .keys()
@@ -606,12 +606,12 @@ handle_request! {
     }
 
     on SetBreakpoints(&mut self, params) {
-        guard!(let Some(file_path) = params.source.path else {
+        let Some(file_path) = params.source.path else {
             return Err(Box::new(GenericError("missing .source.path")));
-        });
-        guard!(let Some(file_id) = self.db.file_id(&file_path) else {
+        };
+        let Some(file_id) = self.db.file_id(&file_path) else {
             return Err(Box::new(GenericError("file is not part of environment")));
-        });
+        };
 
         if params.sourceModified.unwrap_or(false) {
             return Err(Box::new(GenericError("cannot update breakpoints in modified source")));
@@ -625,7 +625,7 @@ handle_request! {
             DebugClient::Extools(extools) => {
                 let mut breakpoints = Vec::new();
 
-                guard!(let Some(extools) = extools.as_ref() else {
+                let Some(extools) = extools.as_ref() else {
                     for sbp in inputs {
                         breakpoints.push(Breakpoint {
                             message: Some("Debugging hooks not available".to_owned()),
@@ -635,7 +635,7 @@ handle_request! {
                         });
                     }
                     return Ok(SetBreakpointsResponse { breakpoints });
-                });
+                };
 
                 for sbp in inputs {
                     if let Some((typepath, name, override_id)) = self.db.location_to_proc_ref(file_id, sbp.line) {
@@ -777,7 +777,7 @@ handle_request! {
 
         match &mut self.client {
             DebugClient::Extools(extools) => {
-                guard!(let Some(extools) = extools.as_ref() else {
+                let Some(extools) = extools.as_ref() else {
                     for _ in inputs {
                         breakpoints.push(Breakpoint {
                             message: Some("Debugging hooks not available".to_owned()),
@@ -786,7 +786,7 @@ handle_request! {
                         });
                     }
                     return Ok(SetFunctionBreakpointsResponse { breakpoints });
-                });
+                };
 
                 for sbp in inputs {
                     // parse function reference
@@ -1040,9 +1040,9 @@ handle_request! {
                 let thread_id = (frame_id % threads.len()) as i64;
                 let frame_no = frame_id / threads.len();
 
-                guard!(let Some(frame) = threads[&thread_id].call_stack.get(frame_no) else {
+                let Some(frame) = threads[&thread_id].call_stack.get(frame_no) else {
                     return Err(Box::new(GenericError2(format!("Stack frame out of range: {} (thread {}, depth {})", frameId, thread_id, frame_no))));
-                });
+                };
 
                 ScopesResponse {
                     scopes: vec![
@@ -1166,9 +1166,9 @@ handle_request! {
                 let mod2 = params.variablesReference % 2;
 
                 let (thread, frame_no) = extools.get_thread_by_frame_id(frame_id)?;
-                guard!(let Some(frame) = thread.call_stack.get(frame_no) else {
+                let Some(frame) = thread.call_stack.get(frame_no) else {
                     return Err(Box::new(GenericError("Stack frame out of range")));
-                });
+                };
 
                 if mod2 == 1 {
                     // arguments
@@ -1409,9 +1409,9 @@ handle_request! {
     on Disassemble(&mut self, params) {
         match &mut self.client {
             DebugClient::Extools(extools) => {
-                guard!(let Some(captures) = MEMORY_REFERENCE_REGEX.captures(&params.memoryReference) else {
+                let Some(captures) = MEMORY_REFERENCE_REGEX.captures(&params.memoryReference) else {
                     return Err(Box::new(GenericError("Invalid memory reference")));
-                });
+                };
                 let proc = &captures[1];
                 let override_id: usize = captures[2].parse()?;
                 //let offset: i64 = captures[3].parse()?;
