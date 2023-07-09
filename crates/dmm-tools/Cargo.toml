@@ -10,7 +10,7 @@ ndarray = "0.15.6"
 rand = "0.8.5"
 dreammaker = { path = "../dreammaker" }
 lodepng = "3.7.2"
-indexmap = "1.9.3"
+indexmap = "2.0.0"
 ahash = "0.8.3"
 either = "1.8.1"
 
@@ -23,7 +23,7 @@ version = "3.13.0"
 features = ["collections"]
 
 [dependencies.png]
-version = "0.17.8"
+version = "0.17.9"
 optional = true
 
 [dependencies.gfx_core]

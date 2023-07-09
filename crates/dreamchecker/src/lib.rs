@@ -1145,11 +1145,9 @@ pub fn check_var_defs(objtree: &ObjectTree, context: &Context) {
                     continue;
                 }
 
-                let Some(parentvar) = parent.vars.get(varname)
-                    else { continue };
+                let Some(parentvar) = parent.vars.get(varname) else { continue };
 
-                let Some(decl) = &parentvar.declaration
-                    else { continue };
+                let Some(decl) = &parentvar.declaration else { continue };
 
                 if let Some(mydecl) = &typevar.declaration {
                     if typevar.value.location.is_builtins() {
