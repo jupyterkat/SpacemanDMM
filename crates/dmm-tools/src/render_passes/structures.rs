@@ -43,7 +43,7 @@ impl RenderPass for GravityGen {
         objtree: &'a ObjectTree,
         _underlays: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        _: &bumpalo::Bump,
+        _: &typed_arena::Arena<String>,
     ) {
         if !atom.istype("/obj/machinery/gravity_generator/main/station/") {
             return;

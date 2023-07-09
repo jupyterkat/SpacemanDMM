@@ -12,7 +12,7 @@ impl RenderPass for SmartCables {
         objtree: &'a ObjectTree,
         neighborhood: &Neighborhood<'a, '_>,
         output: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump,
+        arena: &'a typed_arena::Arena<String>,
     ) -> bool {
         if !atom.istype("/obj/structure/cable/") {
             return true;
@@ -70,9 +70,9 @@ impl RenderPass for SmartCables {
         // calculate icon state
         let mut icon_state;
         if linked_dirs == 0 {
-            icon_state = bumpalo::format!(in bump, "{}-noconnection", cable_layer);
+            icon_state = format!("{}-noconnection", cable_layer);
         } else {
-            icon_state = bumpalo::format!(in bump, "{}", cable_layer);
+            icon_state = format!("{}", cable_layer);
             let mut count = 0;
             for &check_dir in Dir::CARDINALS {
                 if linked_dirs & check_dir.to_int() != 0 {
@@ -85,8 +85,10 @@ impl RenderPass for SmartCables {
             }
         };
 
+        let icon_state = arena.alloc(icon_state).as_str();
+
         output.push(Sprite {
-            icon_state: icon_state.into_bump_str(),
+            icon_state: icon_state,
             ..atom.sprite
         });
         false

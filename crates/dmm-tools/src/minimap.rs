@@ -27,7 +27,7 @@ pub struct Context<'a> {
     pub max: (usize, usize),
     pub render_passes: &'a [Box<dyn RenderPass>],
     pub errors: &'a RwLock<HashSet<String, RandomState>>,
-    pub bump: &'a bumpalo::Bump,
+    pub arena: &'a typed_arena::Arena<String>,
 }
 
 // This should eventually be faliable and not just shrug it's shoulders at errors and log them.
@@ -38,7 +38,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
         map,
         level,
         render_passes,
-        bump,
+        arena,
         ..
     } = ctx;
 
@@ -82,7 +82,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                 }
                 let mut sprite = Sprite::from_vars(objtree, atom);
                 for pass in render_passes {
-                    pass.adjust_sprite(atom, &mut sprite, objtree, bump);
+                    pass.adjust_sprite(atom, &mut sprite, objtree, arena);
                 }
                 if sprite.icon.is_empty() {
                     println!("no icon: {}", atom.type_.path);
@@ -91,7 +91,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                 let atom = Atom { sprite, ..*atom };
 
                 for pass in render_passes {
-                    pass.overlays(&atom, objtree, &mut underlays, &mut overlays, bump);
+                    pass.overlays(&atom, objtree, &mut underlays, &mut overlays, arena);
                 }
 
                 // smoothing time
@@ -127,7 +127,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                         objtree,
                         &neighborhood,
                         &mut underlays,
-                        bump,
+                        arena,
                     ) {
                         normal_appearance = false;
                     }

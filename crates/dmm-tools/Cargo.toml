@@ -13,14 +13,11 @@ lodepng = "3.7.2"
 indexmap = "2.0.0"
 ahash = "0.8.3"
 either = "1.8.1"
+typed-arena = "2.0.2"
 
 [dependencies.bytemuck]
 version = "1.13.1"
 features = ["derive"]
-
-[dependencies.bumpalo]
-version = "3.13.0"
-features = ["collections"]
 
 [dependencies.png]
 version = "0.17.9"

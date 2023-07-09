@@ -55,7 +55,7 @@ pub trait RenderPass: Sync {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         objtree: &'a ObjectTree,
-        bump: &'a bumpalo::Bump, // TODO: kind of a hacky way to pass this
+        arena: &'a typed_arena::Arena<String>, // TODO: kind of a hacky way to pass this
     ) {
     }
 
@@ -66,7 +66,7 @@ pub trait RenderPass: Sync {
         objtree: &'a ObjectTree,
         underlays: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump, // TODO: kind of a hacky way to pass this
+        arena: &'a typed_arena::Arena<String>, // TODO: kind of a hacky way to pass this
     ) {
     }
 
@@ -76,7 +76,7 @@ pub trait RenderPass: Sync {
         objtree: &'a ObjectTree,
         neighborhood: &Neighborhood<'a, '_>,
         output: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump, // TODO: kind of a hacky way to pass this
+        arena: &'a typed_arena::Arena<String>, // TODO: kind of a hacky way to pass this
     ) -> bool {
         true
     }
@@ -342,7 +342,7 @@ impl RenderPass for Overlays {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         objtree: &'a ObjectTree,
-        _: &'a bumpalo::Bump,
+        _: &'a typed_arena::Arena<String>,
     ) {
         use crate::dmi::Dir;
 
@@ -368,7 +368,7 @@ impl RenderPass for Overlays {
         objtree: &'a ObjectTree,
         underlays: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump,
+        arena: &'a typed_arena::Arena<String>,
     ) {
         // overlays and underlays
         if atom.istype("/turf/closed/indestructible/fakeglass/") {
@@ -394,7 +394,7 @@ impl RenderPass for Overlays {
                     add_to(
                         overlays,
                         atom,
-                        bumpalo::format!(in bump, "{}_open", door).into_bump_str(),
+                        arena.alloc(format!("{}_open", door)).as_str(),
                     );
                 }
             } else {
@@ -405,7 +405,7 @@ impl RenderPass for Overlays {
                     add_to(
                         overlays,
                         atom,
-                        bumpalo::format!(in bump, "{}_door", door).into_bump_str(),
+                        arena.alloc(format!("{}_door", door)).as_str(),
                     );
                 }
                 if atom.get_var("welded", objtree).to_bool() {
@@ -469,7 +469,7 @@ impl RenderPass for Pretty {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         _: &'a ObjectTree,
-        _: &'a bumpalo::Bump,
+        _: &'a typed_arena::Arena<String>,
     ) {
         if atom.istype("/obj/structure/bookcase/") {
             sprite.icon_state = "book-0";
@@ -482,7 +482,7 @@ impl RenderPass for Pretty {
         objtree: &'a ObjectTree,
         _: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        _: &bumpalo::Bump,
+        _: &typed_arena::Arena<String>,
     ) {
         if atom.istype("/obj/item/storage/box/") && !atom.istype("/obj/item/storage/box/papersack/")
         {
@@ -572,7 +572,7 @@ impl RenderPass for FancyLayers {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         objtree: &'a ObjectTree,
-        _: &'a bumpalo::Bump,
+        _: &'a typed_arena::Arena<String>,
     ) {
         self.apply_fancy_layer(atom.get_path(), sprite);
 
@@ -590,7 +590,7 @@ impl RenderPass for FancyLayers {
         objtree: &'a ObjectTree,
         _underlays: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        _bump: &'a bumpalo::Bump,
+        _arena: &'a typed_arena::Arena<String>,
     ) {
         // dual layering of vents 2: add abovefloor overlay
         if atom.istype("/obj/machinery/atmospherics/components/unary/") {

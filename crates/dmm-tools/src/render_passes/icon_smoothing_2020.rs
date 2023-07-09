@@ -46,7 +46,7 @@ impl RenderPass for IconSmoothing {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         _objtree: &'a ObjectTree,
-        _bump: &'a bumpalo::Bump,
+        _: &'a typed_arena::Arena<String>,
     ) {
         if atom.istype("/turf/closed/mineral/") {
             sprite.ofs_x -= 4;
@@ -60,7 +60,7 @@ impl RenderPass for IconSmoothing {
         objtree: &'a ObjectTree,
         neighborhood: &Neighborhood<'a, '_>,
         output: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump,
+        arena: &'a typed_arena::Arena<String>,
     ) -> bool {
         let smooth_flags = self.mask
             & atom
@@ -70,9 +70,9 @@ impl RenderPass for IconSmoothing {
         if smooth_flags & SMOOTH_CORNERS != 0 {
             let adjacencies = calculate_adjacencies(objtree, neighborhood, atom, smooth_flags);
             if smooth_flags & SMOOTH_DIAGONAL_CORNERS != 0 {
-                diagonal_smooth(output, objtree, bump, neighborhood, atom, adjacencies);
+                diagonal_smooth(output, objtree, arena, neighborhood, atom, adjacencies);
             } else {
-                cardinal_smooth(output, objtree, bump, atom, adjacencies);
+                cardinal_smooth(output, objtree, arena, atom, adjacencies);
             }
             false
         } else if smooth_flags & SMOOTH_BITMASK != 0 {
@@ -80,7 +80,7 @@ impl RenderPass for IconSmoothing {
             bitmask_smooth(
                 output,
                 objtree,
-                bump,
+                arena,
                 neighborhood,
                 atom,
                 adjacencies,
@@ -186,7 +186,7 @@ fn find_type_in_direction(
 fn cardinal_smooth<'a>(
     output: &mut Vec<Sprite<'a>>,
     objtree: &'a ObjectTree,
-    bump: &'a bumpalo::Bump,
+    arena: &'a typed_arena::Arena<String>,
     source: &Atom<'a>,
     adjacencies: i32,
 ) {
@@ -226,20 +226,22 @@ fn cardinal_smooth<'a>(
     ] {
         let name = if (adjacencies & f1 != 0) && (adjacencies & f2 != 0) {
             if (adjacencies & f3) != 0 {
-                bumpalo::format!(in bump, "{}-f", what)
+                format!("{}-f", what)
             } else {
-                bumpalo::format!(in bump, "{}-{}{}", what, n1, n2)
+                format!("{}-{}{}", what, n1, n2)
             }
         } else if adjacencies & f1 != 0 {
-            bumpalo::format!(in bump, "{}-{}", what, n1)
+            format!("{}-{}", what, n1)
         } else if adjacencies & f2 != 0 {
-            bumpalo::format!(in bump, "{}-{}", what, n2)
+            format!("{}-{}", what, n2)
         } else {
-            bumpalo::format!(in bump, "{}-i", what)
+            format!("{}-i", what)
         };
 
+        let name = arena.alloc(name).as_str();
+
         let mut sprite = Sprite {
-            icon_state: name.into_bump_str(),
+            icon_state: name,
             ..source.sprite
         };
         if let Some(icon) = source.get_var("smooth_icon", objtree).as_path_str() {
@@ -252,7 +254,7 @@ fn cardinal_smooth<'a>(
 fn diagonal_smooth<'a>(
     output: &mut Vec<Sprite<'a>>,
     objtree: &'a ObjectTree,
-    bump: &'a bumpalo::Bump,
+    arena: &'a typed_arena::Arena<String>,
     neighborhood: &Neighborhood<'a, '_>,
     source: &Atom<'a>,
     adjacencies: i32,
@@ -274,7 +276,7 @@ fn diagonal_smooth<'a>(
     } else if adjacencies == SOUTH_JUNCTION | EAST_JUNCTION | SOUTHEAST_JUNCTION {
         ["d-nw", "d-nw-1"]
     } else {
-        return cardinal_smooth(output, objtree, bump, source, adjacencies);
+        return cardinal_smooth(output, objtree, arena, source, adjacencies);
     };
 
     // turf underneath
@@ -364,7 +366,7 @@ fn reverse_ndir(ndir: i32) -> Option<Dir> {
 fn bitmask_smooth<'a>(
     output: &mut Vec<Sprite<'a>>,
     objtree: &'a ObjectTree,
-    bump: &'a bumpalo::Bump,
+    arena: &'a typed_arena::Arena<String>,
     neighborhood: &Neighborhood<'a, '_>,
     source: &Atom<'a>,
     smoothing_junction: i32,
@@ -388,10 +390,14 @@ fn bitmask_smooth<'a>(
         .get_var("base_icon_state", objtree)
         .as_str()
         .unwrap_or("");
+
     let mut sprite = Sprite {
-        icon_state:
-            bumpalo::format!(in bump, "{}-{}{}", base_icon_state, smoothing_junction, diagonal)
-                .into_bump_str(),
+        icon_state: arena
+            .alloc(format!(
+                "{}-{}{}",
+                base_icon_state, smoothing_junction, diagonal
+            ))
+            .as_str(),
         ..source.sprite
     };
     if let Some(icon) = source.get_var("smooth_icon", objtree).as_path_str() {
