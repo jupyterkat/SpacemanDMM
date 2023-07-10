@@ -72,7 +72,7 @@ impl RenderPass for SmartCables {
         if linked_dirs == 0 {
             icon_state = format!("{}-noconnection", cable_layer);
         } else {
-            icon_state = format!("{}", cable_layer);
+            icon_state = cable_layer.to_string();
             let mut count = 0;
             for &check_dir in Dir::CARDINALS {
                 if linked_dirs & check_dir.to_int() != 0 {
@@ -88,7 +88,7 @@ impl RenderPass for SmartCables {
         let icon_state = arena.alloc(icon_state).as_str();
 
         output.push(Sprite {
-            icon_state: icon_state,
+            icon_state,
             ..atom.sprite
         });
         false
