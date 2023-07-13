@@ -42,7 +42,7 @@ pub fn key(input: &str) -> IResult<&str, Key> {
     ))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Dirs {
     One,
     Four,

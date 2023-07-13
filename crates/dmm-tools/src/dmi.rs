@@ -15,8 +15,6 @@ pub type Rect = (u32, u32, u32, u32);
 
 // ----------------------------------------------------------------------------
 // Icon file and metadata handling
-
-#[cfg(all(feature = "png", feature = "gif"))]
 pub mod render;
 
 /// An image with associated DMI metadata.
@@ -106,16 +104,25 @@ impl IconFile {
     }
 }
 
+const NO_TINT: [u8; 4] = [0xff, 0xff, 0xff, 0xff];
+#[allow(unused)]
+const RED: usize = 0;
+#[allow(unused)]
+const GREEN: usize = 1;
+#[allow(unused)]
+const BLUE: usize = 2;
+const ALPHA: usize = 3;
+
 use image::{GenericImage, GenericImageView};
 pub fn composite(
-    image: &image::RgbaImage,
-    map: &mut image::RgbaImage,
-    pos: Coordinate,
-    crop: Rect,
-    color: [u8; 4],
+    from: &image::RgbaImage,
+    to: &mut image::RgbaImage,
+    pos_to: Coordinate,
+    crop_from: Rect,
+    tint_color: [u8; 4],
 ) {
-    let image_view = image.view(crop.0, crop.1, crop.2, crop.3);
-    let mut map_view = map.sub_image(pos.0, pos.1, crop.2, crop.3);
+    let image_view = from.view(crop_from.0, crop_from.1, crop_from.2, crop_from.3);
+    let mut map_view = to.sub_image(pos_to.0, pos_to.1, crop_from.2, crop_from.3);
 
     image_view
         .pixels()
@@ -127,24 +134,24 @@ pub fn composite(
                 .0
                 .iter_mut()
                 .enumerate()
-                .for_each(|(num, channel)| *channel = mul255(*channel, color[num]));
-            let out_alpha = tinted_from[3] + mul255(to_pix[3], 255 - tinted_from[3]);
+                .for_each(|(num, channel)| *channel = mul255(*channel, tint_color[num]));
+            let out_alpha = tinted_from[ALPHA] + mul255(to_pix[ALPHA], 255 - tinted_from[ALPHA]);
 
             if out_alpha != 0 {
                 (0..3).for_each(|i| {
-                    to_pix[i] = (tinted_from[i] * tinted_from[3]
-                        + to_pix[i] * to_pix[3] * (255 - tinted_from[3]) / 255)
+                    to_pix[i] = (tinted_from[i] * tinted_from[ALPHA]
+                        + to_pix[i] * to_pix[ALPHA] * (255 - tinted_from[ALPHA]) / 255)
                         / out_alpha;
                 })
             } else {
                 (0..3).for_each(|i| to_pix[i] = 0)
             }
-            to_pix[3] = out_alpha;
+            to_pix[ALPHA] = out_alpha;
         });
 
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
-        (x as u16 * y as u16 / 255) as u8
+        x * y / 255
     }
 }
 /*
