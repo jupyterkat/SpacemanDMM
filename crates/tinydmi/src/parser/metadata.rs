@@ -109,7 +109,7 @@ impl Metadata {
         Ok(metadata)
     }
     pub fn get_icon_state(&self, icon_state: &str) -> Option<&State> {
-        Some(self.states.get(*self.state_map.get(icon_state)?)?)
+        self.states.get(*self.state_map.get(icon_state)?)
     }
 }
 

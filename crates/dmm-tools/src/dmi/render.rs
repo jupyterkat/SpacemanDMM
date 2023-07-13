@@ -90,7 +90,7 @@ impl<'a> IconRenderer<'a> {
             Either::Right(0..frames)
         };
         for frame in range {
-            self.render_dirs(icon_state, &mut canvas, frame as u32);
+            self.render_dirs(icon_state, &mut canvas, frame);
             vec.push(canvas.clone());
             canvas
                 .pixels_mut()

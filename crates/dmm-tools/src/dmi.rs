@@ -39,7 +39,7 @@ impl IconFile {
         let chunk = info
             .compressed_latin1_text
             .iter()
-            .find(|chunk| chunk.keyword == "Description".to_string())
+            .find(|chunk| chunk.keyword == "Description")
             .ok_or_else(|| {
                 eyre::eyre!(
                     "Cannot find the description chunk, this might just be a regular png, boss!"
@@ -97,10 +97,9 @@ impl IconFile {
     }
 
     pub fn get_icon_state(&self, icon_state: &str) -> Result<&tinydmi::prelude::State> {
-        Ok(self
-            .metadata
+        self.metadata
             .get_icon_state(icon_state)
-            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?)
+            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))
     }
 }
 
@@ -128,7 +127,7 @@ pub fn composite(
         .pixels()
         .zip(map_view.inner_mut().enumerate_pixels_mut())
         .for_each(|((_, _, from_pix), (_, _, to_pix))| {
-            let mut tinted_from = from_pix.clone();
+            let mut tinted_from = from_pix;
 
             tinted_from
                 .0

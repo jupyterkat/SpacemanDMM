@@ -27,9 +27,7 @@ where
         }
 
         // MUST have the first separator
-        if let Err(e) = sep.parse(i.clone()) {
-            return Err(e);
-        };
+        sep.parse(i.clone())?;
 
         loop {
             let len = i.input_len();

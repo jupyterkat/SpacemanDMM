@@ -62,6 +62,7 @@ impl TryFrom<u32> for Dirs {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<u32> for Dirs {
     fn into(self) -> u32 {
         match self {

@@ -23,6 +23,7 @@ pub enum Frames {
     Delays(Vec<f32>),
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<u32> for Frames {
     fn into(self) -> u32 {
         match self {
@@ -55,13 +56,13 @@ impl State {
     }
 
     pub fn num_sprites(&self) -> usize {
-        let dirs: u32 = self.dirs.clone().into();
+        let dirs: u32 = self.dirs.into();
         let frames: u32 = self.frames.clone().into();
         (dirs * frames) as usize
     }
 
     pub fn index_of_dir(&self, dir: Dir, map: &HashMap<String, usize, ahash::RandomState>) -> u32 {
-        let dir_idx = match (self.dirs.clone(), dir) {
+        let dir_idx = match (self.dirs, dir) {
             (Dirs::One, _) => 0,
             (Dirs::Eight, Dir::Northwest) => 7,
             (Dirs::Eight, Dir::Northeast) => 6,
@@ -84,7 +85,7 @@ impl State {
         frame: u32,
         map: &HashMap<String, usize, ahash::RandomState>,
     ) -> u32 {
-        self.index_of_dir(dir, map) + frame * self.dirs.clone() as u32
+        self.index_of_dir(dir, map) + frame * self.dirs as u32
     }
 }
 
