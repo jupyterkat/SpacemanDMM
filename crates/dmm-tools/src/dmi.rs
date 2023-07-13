@@ -140,9 +140,12 @@ pub fn composite(
 
             if out_alpha != 0 {
                 (0..3).for_each(|i| {
-                    to_pix[i] = (tinted_from[i] * tinted_from[ALPHA]
-                        + to_pix[i] * to_pix[ALPHA] * (255 - tinted_from[ALPHA]) / 255)
-                        / out_alpha;
+                    to_pix[i] = ((tinted_from[i] as u32 * tinted_from[ALPHA] as u32
+                        + to_pix[i] as u32
+                            * to_pix[ALPHA] as u32
+                            * (255 - tinted_from[ALPHA] as u32)
+                            / 255)
+                        / out_alpha as u32) as u8;
                 })
             } else {
                 (0..3).for_each(|i| to_pix[i] = 0)
@@ -152,7 +155,7 @@ pub fn composite(
 
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
-        (x as u16 * y as u16 / 255) as u8
+        (x as u32 * y as u32 / 255) as u8
     }
 }
 /*
