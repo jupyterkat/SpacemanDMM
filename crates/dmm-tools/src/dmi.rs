@@ -1,21 +1,16 @@
 //! DMI metadata and image composition.
 //!
 //! Includes re-exports from `dreammaker::dmi`.
-use dreammaker as dm;
 
-use bytemuck::Pod;
-use std::io;
-use std::path::Path;
+use std::{io::Read, path::Path};
 
-use lodepng::{self, ColorType, Decoder, RGBA};
-use ndarray::Array2;
+use eyre::Result;
 
-pub use dm::dmi::*;
-use std::ops::{Index, IndexMut};
+use tinydmi::prelude::Dir;
 
 /// Absolute x and y.
 pub type Coordinate = (u32, u32);
-/// Start x, Start y, End x, End y - relative to Coordinate.
+/// Top left x and y, width and height
 pub type Rect = (u32, u32, u32, u32);
 
 // ----------------------------------------------------------------------------
@@ -28,93 +23,137 @@ pub mod render;
 #[derive(Debug)]
 pub struct IconFile {
     /// The icon's metadata.
-    pub metadata: Metadata,
+    pub metadata: tinydmi::prelude::Metadata,
     /// The icon's image.
-    pub image: Image,
+    pub image: image::RgbaImage,
 }
 
 impl IconFile {
-    pub fn from_file(path: &Path) -> io::Result<IconFile> {
-        Self::from_bytes(&std::fs::read(path)?)
-    }
+    pub fn from_file(path: &Path) -> Result<IconFile> {
+        let file = std::fs::File::open(path)?;
+        let mut reader = std::io::BufReader::new(file);
+        let mut buf = vec![];
+        reader.read_to_end(&mut buf)?;
 
-    pub fn from_bytes(data: &[u8]) -> io::Result<IconFile> {
-        let (bitmap, metadata) = Metadata::from_bytes(data)?;
+        let decoder = png::Decoder::new(buf.as_slice());
+        let info = decoder.read_info()?;
+        let info = info.info();
+        let chunk = info
+            .compressed_latin1_text
+            .iter()
+            .find(|chunk| chunk.keyword == "Description".to_string())
+            .ok_or_else(|| {
+                eyre::eyre!(
+                    "Cannot find the description chunk, this might just be a regular png, boss!"
+                )
+            })?;
+
+        let meta_text = chunk.get_text()?;
+
+        let imagebuf =
+            image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
+                .decode()?;
+
+        let imagebuf = match imagebuf {
+            image::DynamicImage::ImageRgba8(img) => img,
+            _ => return Err(eyre::eyre!("Unsupported png type!")),
+        };
+
         Ok(IconFile {
-            metadata,
-            image: Image::from_rgba(bitmap),
+            metadata: tinydmi::parse(meta_text)?,
+            image: imagebuf,
         })
     }
 
-    #[inline]
-    pub fn rect_of(&self, icon_state: &StateIndex, dir: Dir) -> Option<Rect> {
-        self.metadata.rect_of(self.image.width, icon_state, dir, 0)
+    pub fn rect_of(&self, icon_state: &str, dir: Dir) -> Option<Rect> {
+        if self.metadata.states.is_empty() {
+            return Some((
+                0,
+                0,
+                self.metadata.header.width,
+                self.metadata.header.height,
+            ));
+        }
+        let state = self.get_icon_state(icon_state).ok()?;
+        let icon_index = state.index_of_frame(dir, 1, &self.metadata.state_map);
+
+        let icon_count = self.image.width() / self.metadata.header.width;
+        let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
+        Some((
+            icon_x * self.metadata.header.width,
+            icon_y * self.metadata.header.height,
+            self.metadata.header.width,
+            self.metadata.header.height,
+        ))
     }
 
     pub fn rect_of_index(&self, icon_index: u32) -> Rect {
-        let icon_count = self.image.width / self.metadata.width;
+        let icon_count = self.image.width() / self.metadata.header.width;
         let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
         (
-            icon_x * self.metadata.width,
-            icon_y * self.metadata.height,
-            self.metadata.width,
-            self.metadata.height,
+            icon_x * self.metadata.header.width,
+            icon_y * self.metadata.header.height,
+            self.metadata.header.width,
+            self.metadata.header.height,
         )
     }
 
-    pub fn get_icon_state(&self, icon_state: &StateIndex) -> io::Result<&State> {
-        self.metadata.get_icon_state(icon_state).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("icon_state {} not found", icon_state),
-            )
-        })
+    pub fn get_icon_state(&self, icon_state: &str) -> Result<&tinydmi::prelude::State> {
+        Ok(self
+            .metadata
+            .get_icon_state(icon_state)
+            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?)
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, Pod, Zeroable, Eq, PartialEq)]
-#[repr(C)]
-pub struct Rgba8 {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
+use image::{GenericImage, GenericImageView};
+pub fn composite(
+    image: &image::RgbaImage,
+    map: &mut image::RgbaImage,
+    pos: Coordinate,
+    crop: Rect,
+    color: [u8; 4],
+) {
+    let image_view = image.view(crop.0, crop.1, crop.2, crop.3);
+    let mut map_view = map.sub_image(pos.0, pos.1, crop.2, crop.3);
+
+    image_view
+        .pixels()
+        .zip(map_view.inner_mut().enumerate_pixels_mut())
+        .for_each(|((_, _, from_pix), (_, _, to_pix))| {
+            let mut tinted_from = from_pix.clone();
+
+            tinted_from
+                .0
+                .iter_mut()
+                .enumerate()
+                .for_each(|(num, channel)| *channel = mul255(*channel, color[num]));
+            let out_alpha = tinted_from[3] + mul255(to_pix[3], 255 - tinted_from[3]);
+
+            if out_alpha != 0 {
+                (0..3).for_each(|i| {
+                    to_pix[i] = (tinted_from[i] * tinted_from[3]
+                        + to_pix[i] * to_pix[3] * (255 - tinted_from[3]) / 255)
+                        / out_alpha;
+                })
+            } else {
+                (0..3).for_each(|i| to_pix[i] = 0)
+            }
+            to_pix[3] = out_alpha;
+        });
+
+    #[inline]
+    fn mul255(x: u8, y: u8) -> u8 {
+        (x as u16 * y as u16 / 255) as u8
+    }
 }
-
-impl Rgba8 {
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Rgba8 {
-        Rgba8 { r, g, b, a }
-    }
-
-    pub fn as_bytes(&self) -> &[u8; 4] {
-        bytemuck::cast_ref(self)
-    }
-
-    pub fn as_bytes_mut(&mut self) -> &mut [u8; 4] {
-        bytemuck::cast_mut(self)
-    }
-}
-
-impl Index<u8> for Rgba8 {
-    type Output = u8;
-
-    fn index(&self, index: u8) -> &Self::Output {
-        &self.as_bytes()[index as usize]
-    }
-}
-
-impl IndexMut<u8> for Rgba8 {
-    fn index_mut(&mut self, index: u8) -> &mut Self::Output {
-        &mut self.as_bytes_mut()[index as usize]
-    }
-}
-
+/*
 // ----------------------------------------------------------------------------
 // Image manipulation
 
 /// A two-dimensional RGBA image.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Image {
+struct Image {
     pub width: u32,
     pub height: u32,
     pub data: Array2<Rgba8>,
@@ -146,7 +185,7 @@ impl Image {
     ///
     /// Prefer to call `IconFile::from_bytes`, which can read both metadata and
     /// image contents at one time.
-    pub fn from_bytes(data: &[u8]) -> io::Result<Image> {
+    pub fn from_bytes(data: &[u8]) -> Result<Image> {
         let mut decoder = Decoder::new();
         decoder.info_raw_mut().colortype = ColorType::RGBA;
         decoder.info_raw_mut().set_bitdepth(8);
@@ -165,7 +204,7 @@ impl Image {
     ///
     /// Prefer to call `IconFile::from_file`, which can read both metadata and
     /// image contents at one time.
-    pub fn from_file(path: &Path) -> io::Result<Image> {
+    pub fn from_file(path: &Path) -> Result<Image> {
         let path = &dm::fix_case(path);
         Self::from_bytes(&std::fs::read(path)?)
     }
@@ -175,7 +214,7 @@ impl Image {
     }
 
     #[cfg(feature = "png")]
-    pub fn to_write<W: std::io::Write>(&self, writer: W) -> io::Result<()> {
+    pub fn to_write<W: std::io::Write>(&self, writer: W) -> Result<()> {
         {
             let mut encoder = png::Encoder::new(writer, self.width, self.height);
             encoder.set_color(::png::ColorType::Rgba);
@@ -188,12 +227,12 @@ impl Image {
     }
 
     #[cfg(feature = "png")]
-    pub fn to_file(&self, path: &Path) -> io::Result<()> {
+    pub fn to_file(&self, path: &Path) -> Result<()> {
         self.to_write(std::fs::File::create(path)?)
     }
 
     #[cfg(feature = "png")]
-    pub fn to_bytes(&self) -> io::Result<Vec<u8>> {
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
         let mut vector = Vec::new();
         self.to_write(&mut vector)?;
         Ok(vector)
@@ -243,3 +282,4 @@ impl Image {
 fn mul255(x: u8, y: u8) -> u8 {
     (x as u16 * y as u16 / 255) as u8
 }
+*/

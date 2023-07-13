@@ -28,6 +28,7 @@ toml = "0.5.9"
 petgraph = { version = "0.6.0", default-features = false }
 weak-table = "0.3.2"
 slice-of-array = "0.3.2"
+eyre = "0.6.8"
 
 [dependencies.nfd]
 git = "https://github.com/SpaceManiac/nfd-rs"

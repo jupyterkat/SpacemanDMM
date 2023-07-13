@@ -1,6 +1,6 @@
 use super::*;
-use crate::dmi::Dir;
 use std::fmt::Write;
+use tinydmi::prelude::Dir;
 
 #[derive(Default)]
 pub struct SmartCables;

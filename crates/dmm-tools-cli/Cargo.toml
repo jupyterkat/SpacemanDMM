@@ -14,10 +14,10 @@ structopt = "0.3.26"
 structopt-derive = "0.4.18"
 serde = "1.0.171"
 serde_derive = "1.0.171"
-serde_json = "1.0.100"
+serde_json = "1.0.102"
 rayon = "1.7.0"
 dreammaker = { path = "../dreammaker" }
-dmm-tools = { path = "../dmm-tools", features = ["png"] }
+dmm-tools = { path = "../dmm-tools" }
 ahash = "0.8.3"
 
 [build-dependencies]

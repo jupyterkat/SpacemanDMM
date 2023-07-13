@@ -1,8 +1,10 @@
 //! TGM map writer.
 use std::fs::File;
-use std::io::{self, BufWriter, Write};
+use std::io::{BufWriter, Write};
 
 use ndarray::Axis;
+
+use eyre::Result;
 
 use super::Map;
 
@@ -11,7 +13,7 @@ const TGM_HEADER: &str =
 
 // Note: writeln! currently (2022-04-30) writes the \n character alone on all platforms
 // If that changes, this will break.
-pub fn save_tgm(map: &Map, f: File) -> io::Result<()> {
+pub fn save_tgm(map: &Map, f: File) -> Result<()> {
     let mut f = BufWriter::new(f);
     writeln!(f, "{}", TGM_HEADER)?;
 

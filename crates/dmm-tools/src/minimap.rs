@@ -4,12 +4,13 @@ use std::sync::RwLock;
 use dreammaker as dm;
 use ndarray::Axis;
 
-use crate::dmi::{self, Dir, Image};
+use crate::dmi::composite;
 use crate::dmm::{Map, Prefab, ZLevel};
 use crate::icon_cache::IconCache;
 use crate::render_passes::RenderPass;
 use dm::constants::Constant;
 use dm::objtree::*;
+use tinydmi::prelude::Dir;
 
 use ahash::RandomState;
 
@@ -32,7 +33,7 @@ pub struct Context<'a> {
 
 // This should eventually be faliable and not just shrug it's shoulders at errors and log them.
 #[allow(clippy::result_unit_err)]
-pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
+pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage, ()> {
     let Context {
         objtree,
         map,
@@ -147,7 +148,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
     // sorts the atom list and renders them onto the output image
     sprites.sort_by_key(|(_, s)| (s.plane, s.layer));
 
-    let mut map_image = Image::new_rgba(len_x as u32 * TILE_SIZE, len_y as u32 * TILE_SIZE);
+    let mut map_image = image::RgbaImage::new(len_x as u32 * TILE_SIZE, len_y as u32 * TILE_SIZE);
     'sprite: for (loc, sprite) in sprites {
         for pass in render_passes.iter() {
             if !pass.sprite_filter(&sprite) {
@@ -160,16 +161,16 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
             None => continue,
         };
 
-        if let Some(rect) = icon_file.rect_of(&sprite.icon_state.into(), sprite.dir) {
+        if let Some(rect) = icon_file.rect_of(&sprite.icon_state, sprite.dir) {
             let pixel_x = sprite.ofs_x;
-            let pixel_y = sprite.ofs_y + icon_file.metadata.height as i32;
+            let pixel_y = sprite.ofs_y + icon_file.metadata.header.height as i32;
             let loc = (
                 ((loc.0 - ctx.min.0 as u32) * TILE_SIZE) as i32 + pixel_x,
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
-            if let Some((loc, rect)) = clip((map_image.width, map_image.height), loc, rect) {
-                map_image.composite(&icon_file.image, loc, rect, sprite.color);
+            if let Some((loc, rect)) = clip((map_image.width(), map_image.height()), loc, rect) {
+                composite(&icon_file.image, &mut map_image, loc, rect, sprite.color)
             }
         } else {
             let key = format!(
@@ -185,6 +186,8 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
 
     Ok(map_image)
 }
+
+use super::dmi;
 
 // OOB handling
 fn clip(

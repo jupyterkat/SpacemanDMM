@@ -1,14 +1,14 @@
 //! Editor-environment specific DMI (texture) handling.
 
-use std::io;
-use std::path::{Path, PathBuf};
+use eyre::Result;
 use std::collections::hash_map::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
-use lodepng::{self, RGBA, Decoder, ColorType};
+use lodepng::{self, ColorType, Decoder, RGBA};
 
-use gfx::{self, Factory as FactoryTrait};
 use crate::{Factory, Texture};
+use gfx::{self, Factory as FactoryTrait};
 
 type Rect = (u32, u32, u32, u32);
 
@@ -130,12 +130,14 @@ impl IconFile {
     }
 
     pub fn uv_of(&self, icon_state: &str, dir: Dir) -> Option<[f32; 4]> {
-        self.rect_of(icon_state, dir).map(|(x1, y1, w, h)| [
-            x1 as f32 / self.width as f32,
-            y1 as f32 / self.height as f32,
-            (x1 + w) as f32 / self.width as f32,
-            (y1 + h) as f32 / self.height as f32,
-        ])
+        self.rect_of(icon_state, dir).map(|(x1, y1, w, h)| {
+            [
+                x1 as f32 / self.width as f32,
+                y1 as f32 / self.height as f32,
+                (x1 + w) as f32 / self.width as f32,
+                (y1 + h) as f32 / self.height as f32,
+            ]
+        })
     }
 
     #[inline]
@@ -169,10 +171,12 @@ pub fn load_texture(factory: &mut Factory, bitmap: &lodepng::Bitmap<RGBA>) -> Te
     }
 
     let kind = gfx::texture::Kind::D2(width as u16, height as u16, gfx::texture::AaMode::Single);
-    let (_, view) = factory.create_texture_immutable_u8::<crate::ColorFormat>(
-        kind,
-        gfx::texture::Mipmap::Provided,
-        &[&new_buffer[..]]
-    ).expect("create_texture_immutable_u8");
+    let (_, view) = factory
+        .create_texture_immutable_u8::<crate::ColorFormat>(
+            kind,
+            gfx::texture::Mipmap::Provided,
+            &[&new_buffer[..]],
+        )
+        .expect("create_texture_immutable_u8");
     view
 }

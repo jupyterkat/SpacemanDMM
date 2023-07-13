@@ -344,7 +344,7 @@ impl RenderPass for Overlays {
         objtree: &'a ObjectTree,
         _: &'a typed_arena::Arena<String>,
     ) {
-        use crate::dmi::Dir;
+        use tinydmi::prelude::Dir;
 
         if atom.istype("/obj/machinery/power/apc/") {
             // auto-set pixel location

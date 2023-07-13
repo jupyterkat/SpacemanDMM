@@ -325,7 +325,7 @@ fn run(opt: &Opt, command: &Command, context: &mut Context) {
                         1 + z
                     );
                     println!("{}saving {}", prefix, outfile);
-                    image.to_file(outfile.as_ref()).unwrap();
+                    image.save(&outfile).unwrap();
                     if pngcrush {
                         println!("    pngcrush {}", outfile);
                         let temp = format!("{}.temp", outfile);
@@ -663,7 +663,7 @@ fn render_many(context: &Context, command: RenderManyCommand) -> RenderManyComma
                         PathBuf::from(format!("{}_z{}_chunk{}.png", stem, chunk.z, chunk_idx,));
                     eprintln!("{}/{}: save {}", file_idx, chunk_idx, filename.display());
                     let outfile = output_directory.join(&filename);
-                    image.to_file(&outfile).unwrap(); // TODO: error handling
+                    image.save(&outfile).unwrap(); // TODO: error handling
 
                     RenderManyChunkResult { filename }
                 })

@@ -26,7 +26,6 @@ pub mod ast;
 mod builtins;
 pub mod config;
 pub mod constants;
-pub mod dmi;
 pub mod docs;
 pub mod indents;
 pub mod lexer;

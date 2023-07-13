@@ -9,6 +9,7 @@ members = [
     "crates/dreamchecker",
     "crates/dreammaker",
     "crates/interval-tree",
+    "crates/tinydmi"
     #"crates/spaceman-dmm",
 ]
 

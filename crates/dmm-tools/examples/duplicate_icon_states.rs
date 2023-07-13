@@ -1,13 +1,10 @@
-extern crate dmm_tools;
-extern crate dreammaker as dm;
-extern crate ndarray;
-extern crate walkdir;
-
 use dmm_tools::dmi::*;
-use ndarray::s;
+use image::GenericImageView;
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
+
+use tinydmi::prelude::State;
 
 fn is_visible(entry: &DirEntry) -> bool {
     entry
@@ -38,24 +35,25 @@ fn files_with_extension<F: FnMut(&Path)>(ext: &str, mut f: F) {
 
 fn all_same(icon_file: &IconFile, states: &[&State]) -> bool {
     let (first, rest) = states.split_first().unwrap();
-    let first_start_index = first.offset as u32;
+    let first_start_index = *icon_file.metadata.state_map.get(&first.name).unwrap() as u32;
     for state in rest {
         if state.dirs != first.dirs || state.frames != first.frames {
             return false;
         }
-        let start_index = state.offset as u32;
+        let start_index = *icon_file.metadata.state_map.get(&state.name).unwrap() as u32;
         for i in 0..state.num_sprites() as u32 {
             let rect1 = icon_file.rect_of_index(first_start_index + i);
             let rect2 = icon_file.rect_of_index(start_index + i);
-            let slice1 = icon_file.image.data.slice(s![
-                rect1.1 as isize..(rect1.1 + rect1.3) as isize,
-                rect1.0 as isize..(rect1.0 + rect1.2) as isize
-            ]);
-            let slice2 = icon_file.image.data.slice(s![
-                rect2.1 as isize..(rect2.1 + rect2.3) as isize,
-                rect2.0 as isize..(rect2.0 + rect2.2) as isize
-            ]);
-            if slice1 != slice2 {
+
+            let slice1 = icon_file.image.view(rect1.0, rect1.1, rect1.2, rect1.3);
+            let slice2 = icon_file.image.view(rect2.0, rect2.1, rect2.2, rect2.3);
+
+            if slice1
+                .pixels()
+                .zip(slice2.pixels())
+                .find(|((_, _, bit1), (_, _, bit2))| bit1 != bit2)
+                .is_some()
+            {
                 return false;
             }
         }
