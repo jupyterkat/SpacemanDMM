@@ -152,7 +152,7 @@ pub fn composite(
 
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
-        x * y / 255
+        (x as u16 * y as u16 / 255) as u8
     }
 }
 /*
