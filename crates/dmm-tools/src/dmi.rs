@@ -16,6 +16,8 @@ pub type Rect = (u32, u32, u32, u32);
 // ----------------------------------------------------------------------------
 // Icon file and metadata handling
 pub mod render;
+// Re-exports
+pub use tinydmi::prelude::*;
 
 /// An image with associated DMI metadata.
 #[derive(Debug)]
