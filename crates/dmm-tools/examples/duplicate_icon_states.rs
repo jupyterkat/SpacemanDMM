@@ -45,8 +45,12 @@ fn all_same(icon_file: &IconFile, states: &[&State]) -> bool {
             let rect1 = icon_file.rect_of_index(first_start_index + i);
             let rect2 = icon_file.rect_of_index(start_index + i);
 
-            let slice1 = icon_file.image.view(rect1.0, rect1.1, rect1.2, rect1.3);
-            let slice2 = icon_file.image.view(rect2.0, rect2.1, rect2.2, rect2.3);
+            let slice1 = icon_file
+                .image
+                .view(rect1.x, rect1.y, rect1.width, rect1.height);
+            let slice2 = icon_file
+                .image
+                .view(rect2.x, rect2.y, rect2.width, rect2.height);
 
             if slice1
                 .pixels()

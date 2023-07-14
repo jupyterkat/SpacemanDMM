@@ -10,8 +10,25 @@ use tinydmi::prelude::Dir;
 
 /// Absolute x and y.
 pub type Coordinate = (u32, u32);
-/// Top left x and y, width and height
-pub type Rect = (u32, u32, u32, u32);
+
+#[derive(Clone, Copy)]
+pub struct Rect {
+    //top left x
+    pub x: u32,
+    //top left y
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Rect {
+    pub fn bottom_right_x(&self) -> u32 {
+        self.x + self.width
+    }
+    pub fn bottom_right_y(&self) -> u32 {
+        self.y + self.height
+    }
+}
 
 // ----------------------------------------------------------------------------
 // Icon file and metadata handling
@@ -67,35 +84,35 @@ impl IconFile {
 
     pub fn rect_of(&self, icon_state: &str, dir: Dir) -> Option<Rect> {
         if self.metadata.states.is_empty() {
-            return Some((
-                0,
-                0,
-                self.metadata.header.width,
-                self.metadata.header.height,
-            ));
+            return Some(Rect {
+                x: 0,
+                y: 0,
+                width: self.metadata.header.width,
+                height: self.metadata.header.height,
+            });
         }
         let state = self.get_icon_state(icon_state).ok()?;
         let icon_index = state.index_of_frame(dir, 1, &self.metadata.state_map);
 
         let icon_count = self.image.width() / self.metadata.header.width;
         let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
-        Some((
-            icon_x * self.metadata.header.width,
-            icon_y * self.metadata.header.height,
-            self.metadata.header.width,
-            self.metadata.header.height,
-        ))
+        Some(Rect {
+            x: icon_x * self.metadata.header.width,
+            y: icon_y * self.metadata.header.height,
+            width: self.metadata.header.width,
+            height: self.metadata.header.height,
+        })
     }
 
     pub fn rect_of_index(&self, icon_index: u32) -> Rect {
         let icon_count = self.image.width() / self.metadata.header.width;
         let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
-        (
-            icon_x * self.metadata.header.width,
-            icon_y * self.metadata.header.height,
-            self.metadata.header.width,
-            self.metadata.header.height,
-        )
+        Rect {
+            x: icon_x * self.metadata.header.width,
+            y: icon_y * self.metadata.header.height,
+            width: self.metadata.header.width,
+            height: self.metadata.header.height,
+        }
     }
 
     pub fn get_icon_state(&self, icon_state: &str) -> Result<&tinydmi::prelude::State> {
@@ -122,8 +139,8 @@ pub fn composite(
     crop_from: Rect,
     tint_color: [u8; 4],
 ) {
-    let image_view = from.view(crop_from.0, crop_from.1, crop_from.2, crop_from.3);
-    let mut map_view = to.sub_image(pos_to.0, pos_to.1, crop_from.2, crop_from.3);
+    let image_view = from.view(crop_from.x, crop_from.y, crop_from.width, crop_from.height);
+    let mut map_view = to.sub_image(pos_to.0, pos_to.1, crop_from.width, crop_from.height);
 
     image_view
         .pixels()

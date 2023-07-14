@@ -191,10 +191,40 @@ use super::dmi;
 
 // OOB handling
 fn clip(
-    bounds: dmi::Coordinate,
-    mut loc: (i32, i32),
+    (width, height): dmi::Coordinate,
+    (mut loc_x, mut loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
+    //let (left_top_x, left_top_y, right_bottom_x, right_bottom_y) =
+    //    (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
+    if loc_x < 0 {
+        rect.x += (-loc_x) as u32;
+        let right_bottom_x = rect.bottom_right_x().checked_sub((-loc_x) as u32)?;
+        rect.width = right_bottom_x - rect.x;
+        loc_x = 0;
+    }
+
+    while loc_x + rect.bottom_right_x() as i32 > width as i32 {
+        rect.width -= 1;
+        if rect.width == 0 {
+            return None;
+        }
+    }
+
+    if loc_y < 0 {
+        rect.y += (-loc_y) as u32;
+        let right_bottom_y = rect.bottom_right_y().checked_sub((-loc_y) as u32)?;
+        rect.height = right_bottom_y - rect.y;
+        loc_y = 0;
+    }
+
+    while loc_y + rect.bottom_right_y() as i32 > height as i32 {
+        rect.height -= 1;
+        if rect.height == 0 {
+            return None;
+        }
+    }
+    /*
     if loc.0 < 0 {
         rect.0 += (-loc.0) as u32;
         match rect.2.checked_sub((-loc.0) as u32) {
@@ -223,7 +253,8 @@ fn clip(
             return None;
         }
     }
-    Some(((loc.0 as u32, loc.1 as u32), rect))
+    */
+    Some(((loc_x as u32, loc_y as u32), rect))
 }
 
 fn get_atom_list<'a>(
