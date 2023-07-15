@@ -204,7 +204,7 @@ fn clip(
         loc_x = 0;
     }
 
-    while loc_x + rect.bottom_right_x() as i32 > width as i32 {
+    while loc_x + rect.width as i32 > width as i32 {
         rect.width -= 1;
         if rect.width == 0 {
             return None;
@@ -218,7 +218,7 @@ fn clip(
         loc_y = 0;
     }
 
-    while loc_y + rect.bottom_right_y() as i32 > height as i32 {
+    while loc_y + rect.height as i32 > height as i32 {
         rect.height -= 1;
         if rect.height == 0 {
             return None;

@@ -73,6 +73,16 @@ impl Into<u32> for Dirs {
     }
 }
 
+impl Dirs {
+    pub fn get_num(&self) -> u32 {
+        match self {
+            Dirs::One => 1,
+            Dirs::Four => 4,
+            Dirs::Eight => 8,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum KeyValue {
     Version(f32),

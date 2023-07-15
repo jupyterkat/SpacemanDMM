@@ -45,7 +45,11 @@ impl<'a> IconRenderer<'a> {
     /// or not.
     /// Returns a [`RenderType`] to help you determine how to treat the written data.
     pub fn prepare_render(&self, icon_state: &str) -> Result<RenderStateGuard> {
-        self.prepare_render_state(self.source.get_icon_state(icon_state)?)
+        self.prepare_render_state(
+            self.source
+                .get_icon_state(icon_state)
+                .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?,
+        )
     }
 
     /// This is here so that duplicate icon states can be handled by not relying on the btreemap
@@ -68,7 +72,10 @@ impl<'a> IconRenderer<'a> {
     /// Instead of writing to a file, this gives a Vec<Image> of each frame/dir as it would be composited
     /// for a file.
     pub fn render_to_images(&self, icon_state: &str) -> Result<Vec<RgbaImage>> {
-        let state = self.source.get_icon_state(icon_state)?;
+        let state = self
+            .source
+            .get_icon_state(icon_state)
+            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?;
         Ok(self.render_frames(state))
     }
 }
@@ -140,7 +147,11 @@ impl<'a> IconRenderer<'a> {
     /// Renders each direction to the same canvas, offsetting them to the right
     fn render_dirs(&self, icon_state: &State, canvas: &mut RgbaImage, frame: u32) {
         for (dir_no, dir) in Self::ordered_dirs(icon_state.dirs).iter().enumerate() {
-            let frame_idx = icon_state.index_of_frame(*dir, frame, &self.source.metadata.state_map);
+            let frame_idx = self
+                .source
+                .metadata
+                .get_index_of_frame(&icon_state.name, *dir, frame)
+                .unwrap();
             let frame_rect = self.source.rect_of_index(frame_idx);
             composite(
                 &self.source.image,

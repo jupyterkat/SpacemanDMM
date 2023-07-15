@@ -11,7 +11,7 @@ use tinydmi::prelude::Dir;
 /// Absolute x and y.
 pub type Coordinate = (u32, u32);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Rect {
     //top left x
     pub x: u32,
@@ -82,6 +82,18 @@ impl IconFile {
         })
     }
 
+    pub fn get_icon(&self, index: usize) -> image::SubImage<&image::RgbaImage> {
+        let icon_count = self.image.width() / self.metadata.header.width;
+        let (icon_x, icon_y) = (index as u32 % icon_count, index as u32 / icon_count);
+
+        self.image.view(
+            icon_x as u32,
+            icon_y as u32,
+            self.metadata.header.width,
+            self.metadata.header.height,
+        )
+    }
+
     pub fn rect_of(&self, icon_state: &str, dir: Dir) -> Option<Rect> {
         if self.metadata.states.is_empty() {
             return Some(Rect {
@@ -91,11 +103,13 @@ impl IconFile {
                 height: self.metadata.header.height,
             });
         }
-        let state = self.get_icon_state(icon_state).ok()?;
-        let icon_index = state.index_of_frame(dir, 1, &self.metadata.state_map);
+        let icon_index = self.metadata.get_index_of_frame(icon_state, dir, 0)?;
 
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
+        let (icon_x, icon_y) = (
+            icon_index as u32 % icon_count,
+            icon_index as u32 / icon_count,
+        );
         Some(Rect {
             x: icon_x * self.metadata.header.width,
             y: icon_y * self.metadata.header.height,
@@ -115,10 +129,10 @@ impl IconFile {
         }
     }
 
-    pub fn get_icon_state(&self, icon_state: &str) -> Result<&tinydmi::prelude::State> {
+    pub fn get_icon_state(&self, icon_state: &str) -> Option<&tinydmi::prelude::State> {
         self.metadata
             .get_icon_state(icon_state)
-            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))
+            .map(|(_, state)| state)
     }
 }
 
@@ -131,7 +145,7 @@ const GREEN: usize = 1;
 const BLUE: usize = 2;
 const ALPHA: usize = 3;
 
-use image::{GenericImage, GenericImageView};
+use image::GenericImageView;
 pub fn composite(
     from: &image::RgbaImage,
     to: &mut image::RgbaImage,
@@ -139,41 +153,89 @@ pub fn composite(
     crop_from: Rect,
     tint_color: [u8; 4],
 ) {
+    if crop_from.x + crop_from.width > from.width()
+        || crop_from.y + crop_from.height > from.height()
+    {
+        eprintln!(
+            "Cannot get subview, out of bounds! {crop_from:?}, (img_width, img_height) {}:{}",
+            from.width(),
+            from.height()
+        );
+        return;
+    }
     let image_view = from.view(crop_from.x, crop_from.y, crop_from.width, crop_from.height);
-    let mut map_view = to.sub_image(pos_to.0, pos_to.1, crop_from.width, crop_from.height);
 
-    image_view
-        .pixels()
-        .zip(map_view.inner_mut().enumerate_pixels_mut())
-        .for_each(|((_, _, from_pix), (_, _, to_pix))| {
-            let mut tinted_from = from_pix;
+    image_view.pixels().for_each(|(x, y, from_pix)| {
+        let mut tinted_from = from_pix;
 
-            tinted_from
-                .0
-                .iter_mut()
-                .enumerate()
-                .for_each(|(num, channel)| *channel = mul255(*channel, tint_color[num]));
-            let out_alpha = tinted_from[ALPHA] + mul255(to_pix[ALPHA], 255 - tinted_from[ALPHA]);
+        let to_pix = to.get_pixel_mut(x + pos_to.0, y + pos_to.1);
 
-            if out_alpha != 0 {
-                (0..3).for_each(|i| {
-                    to_pix[i] = ((tinted_from[i] as u32 * tinted_from[ALPHA] as u32
-                        + to_pix[i] as u32
-                            * to_pix[ALPHA] as u32
-                            * (255 - tinted_from[ALPHA] as u32)
-                            / 255)
-                        / out_alpha as u32) as u8;
-                })
-            } else {
-                (0..3).for_each(|i| to_pix[i] = 0)
-            }
-            to_pix[ALPHA] = out_alpha;
-        });
+        tinted_from
+            .0
+            .iter_mut()
+            .enumerate()
+            .for_each(|(num, channel)| *channel = mul255(*channel, tint_color[num]));
+        let out_alpha = tinted_from[ALPHA] + mul255(to_pix[ALPHA], 255 - tinted_from[ALPHA]);
+
+        if out_alpha != 0 {
+            (0..3).for_each(|i| {
+                to_pix[i] = ((tinted_from[i] as u32 * tinted_from[ALPHA] as u32
+                    + to_pix[i] as u32 * to_pix[ALPHA] as u32 * (255 - tinted_from[ALPHA] as u32)
+                        / 255)
+                    / out_alpha as u32) as u8;
+            })
+        } else {
+            (0..3).for_each(|i| to_pix[i] = 0)
+        }
+        to_pix[ALPHA] = out_alpha;
+    });
 
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
         (x as u32 * y as u32 / 255) as u8
     }
+}
+
+#[test]
+fn composite_test() {
+    let mut map = image::RgbaImage::new(4, 4);
+    let mut image = image::RgbaImage::new(4, 4);
+
+    image
+        .pixels_mut()
+        .for_each(|rgba| *rgba = [255, 0, 0, 255].into());
+
+    composite(
+        &image,
+        &mut map,
+        (0, 0),
+        Rect {
+            x: 0,
+            y: 0,
+            width: 2,
+            height: 2,
+        },
+        NO_TINT,
+    );
+
+    let map_vec = map.view(0, 0, 2, 2).pixels().collect::<Vec<_>>();
+    let image_vec = image.view(0, 0, 2, 2).pixels().collect::<Vec<_>>();
+    let map = map
+        .enumerate_pixels()
+        .map(|(x, y, img)| (x, y, *img))
+        .collect::<Vec<_>>();
+    let image = image
+        .enumerate_pixels()
+        .map(|(x, y, img)| (x, y, *img))
+        .collect::<Vec<_>>();
+
+    println!("{map_vec:?}");
+    println!("{image_vec:?}");
+
+    println!("--------");
+    println!("{map:?}");
+    println!("{image:?}");
+    assert!(map_vec == image_vec)
 }
 /*
 // ----------------------------------------------------------------------------

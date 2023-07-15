@@ -1,3 +1,4 @@
+use indexmap::IndexMap;
 use std::collections::HashMap;
 
 use eyre::{format_err, Result};
@@ -9,6 +10,8 @@ use nom::{
     sequence::{delimited, pair, terminated},
     IResult,
 };
+
+use crate::prelude::{Dir, Dirs};
 
 use super::{
     key_value::{key_value, KeyValue},
@@ -98,7 +101,7 @@ pub fn header(input: &str) -> IResult<&str, Header> {
 pub struct Metadata {
     pub header: Header,
     pub states: Vec<State>,
-    pub state_map: HashMap<String, usize, ahash::RandomState>,
+    pub state_map: IndexMap<String, Vec<usize>, ahash::RandomState>,
 }
 
 impl Metadata {
@@ -108,18 +111,75 @@ impl Metadata {
 
         Ok(metadata)
     }
-    pub fn get_icon_state(&self, icon_state: &str) -> Option<&State> {
-        self.states.get(*self.state_map.get(icon_state)?)
+
+    pub fn get_icon_state(&self, icon_state: &str) -> Option<(usize, &State)> {
+        let index = *self.state_map.get(icon_state)?.get(0)?;
+        Some((index, self.states.get(index)?))
+    }
+
+    pub fn get_icon_states(&self, icon_state: &str) -> Option<Vec<(usize, &State)>> {
+        self.state_map.get(icon_state).map(|index| {
+            index
+                .iter()
+                .map(|&idx| (idx, self.states.get(idx).unwrap()))
+                .collect::<Vec<_>>()
+        })
+    }
+
+    pub fn get_index_of_dir(&self, icon_state: &str, dir: Dir) -> Option<u32> {
+        let (first_index, first_state) = self.get_icon_state(icon_state)?;
+
+        let dir_idx = match (first_state.dirs, dir) {
+            (Dirs::One, _) => 0,
+            (Dirs::Eight, Dir::Northwest) => 7,
+            (Dirs::Eight, Dir::Northeast) => 6,
+            (Dirs::Eight, Dir::Southwest) => 5,
+            (Dirs::Eight, Dir::Southeast) => 4,
+            (_, Dir::West) => 3,
+            (_, Dir::East) => 2,
+            (_, Dir::North) => 1,
+            (_, _) => 0,
+        };
+        Some(first_index as u32 + dir_idx)
+    }
+
+    pub fn get_index_of_frame(
+        &self,
+        icon_state: &str,
+        dir: super::dir::Dir,
+        frame: u32,
+    ) -> Option<u32> {
+        let (first_index, first_state) = self.get_icon_state(icon_state)?;
+
+        let dir_idx = match (first_state.dirs, dir) {
+            (Dirs::One, _) => 0,
+            (Dirs::Eight, Dir::Northwest) => 7,
+            (Dirs::Eight, Dir::Northeast) => 6,
+            (Dirs::Eight, Dir::Southwest) => 5,
+            (Dirs::Eight, Dir::Southeast) => 4,
+            (_, Dir::West) => 3,
+            (_, Dir::East) => 2,
+            (_, Dir::North) => 1,
+            (_, _) => 0,
+        };
+        Some((first_index as u32 + dir_idx) + frame * first_state.dirs.get_num())
     }
 }
 
 pub fn metadata(input: &str) -> IResult<&str, Metadata> {
     let (tail, (header, states)) =
         all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi))(input)?;
-    let mut state_map: HashMap<String, usize, ahash::RandomState> = Default::default();
-    states.iter().enumerate().for_each(|(num, state)| {
-        state_map.entry(state.name.clone()).or_insert(num);
-    });
+    let mut state_map: IndexMap<String, Vec<usize>, ahash::RandomState> = Default::default();
+
+    let mut cursor = 0;
+    for state in states.iter() {
+        state_map
+            .entry(state.name.clone())
+            .or_insert(Vec::new())
+            .push(cursor as usize);
+        let num_states = state.frames.get_num() * state.dirs.get_num();
+        cursor += num_states;
+    }
     Ok((
         tail,
         Metadata {

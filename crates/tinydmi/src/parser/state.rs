@@ -14,8 +14,6 @@ use super::{
     values::Value,
 };
 
-use super::dir::Dir;
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Frames {
     One,
@@ -29,6 +27,16 @@ impl Into<u32> for Frames {
         match self {
             Frames::One => 1,
             Frames::Count(u) => u,
+            Frames::Delays(v) => v.len() as u32,
+        }
+    }
+}
+
+impl Frames {
+    pub fn get_num(&self) -> u32 {
+        match self {
+            Frames::One => 1,
+            Frames::Count(u) => *u,
             Frames::Delays(v) => v.len() as u32,
         }
     }
@@ -59,33 +67,6 @@ impl State {
         let dirs: u32 = self.dirs.into();
         let frames: u32 = self.frames.clone().into();
         (dirs * frames) as usize
-    }
-
-    pub fn index_of_dir(&self, dir: Dir, map: &HashMap<String, usize, ahash::RandomState>) -> u32 {
-        let dir_idx = match (self.dirs, dir) {
-            (Dirs::One, _) => 0,
-            (Dirs::Eight, Dir::Northwest) => 7,
-            (Dirs::Eight, Dir::Northeast) => 6,
-            (Dirs::Eight, Dir::Southwest) => 5,
-            (Dirs::Eight, Dir::Southeast) => 4,
-            (_, Dir::West) => 3,
-            (_, Dir::East) => 2,
-            (_, Dir::North) => 1,
-            (_, _) => 0,
-        };
-        let offset = *map.get(&self.name).expect("State is not in a map!");
-
-        offset as u32 + dir_idx
-    }
-
-    #[inline]
-    pub fn index_of_frame(
-        &self,
-        dir: Dir,
-        frame: u32,
-        map: &HashMap<String, usize, ahash::RandomState>,
-    ) -> u32 {
-        self.index_of_dir(dir, map) + frame * self.dirs as u32
     }
 }
 
