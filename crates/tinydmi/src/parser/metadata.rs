@@ -100,8 +100,7 @@ pub fn header(input: &str) -> IResult<&str, Header> {
 #[derive(Debug)]
 pub struct Metadata {
     pub header: Header,
-    pub states: Vec<State>,
-    pub state_map: IndexMap<String, Vec<usize>, ahash::RandomState>,
+    pub states: StateMap,
 }
 
 impl Metadata {
@@ -113,15 +112,15 @@ impl Metadata {
     }
 
     pub fn get_icon_state(&self, icon_state: &str) -> Option<(usize, &State)> {
-        let index = *self.state_map.get(icon_state)?.get(0)?;
-        Some((index, self.states.get(index)?))
+        let (icon_index, state) = self.states.get(icon_state)?.get(0)?;
+        Some((*icon_index, state))
     }
 
     pub fn get_duplicate_icon_states(&self, icon_state: &str) -> Option<Vec<(usize, &State)>> {
-        self.state_map.get(icon_state).map(|index| {
+        self.states.get(icon_state).map(|index| {
             index
                 .iter()
-                .map(|&idx| (idx, self.states.get(idx).unwrap()))
+                .map(|(icon_index, state)| (*icon_index, state))
                 .collect::<Vec<_>>()
         })
     }
@@ -166,17 +165,22 @@ impl Metadata {
     }
 }
 
+pub type StateMap = IndexMap<String, Vec<(IconIndex, State)>, ahash::RandomState>;
+pub type IconIndex = usize;
+pub type StateIndex = usize;
+
 pub fn metadata(input: &str) -> IResult<&str, Metadata> {
     let (tail, (header, states)) =
         all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi))(input)?;
-    let mut state_map: IndexMap<String, Vec<usize>, ahash::RandomState> = Default::default();
+    let mut state_map: IndexMap<String, Vec<(usize, State)>, ahash::RandomState> =
+        Default::default();
 
-    states.iter().fold(0, |cursor, state| {
+    states.into_iter().fold(0, |cursor, state| {
+        let num_states = state.frames.get_num() * state.dirs.get_num();
         state_map
             .entry(state.name.clone())
             .or_insert(Vec::new())
-            .push(cursor as usize);
-        let num_states = state.frames.get_num() * state.dirs.get_num();
+            .push((cursor as usize, state));
         cursor + num_states
     });
 
@@ -184,8 +188,7 @@ pub fn metadata(input: &str) -> IResult<&str, Metadata> {
         tail,
         Metadata {
             header,
-            states,
-            state_map,
+            states: state_map,
         },
     ))
 }
@@ -225,20 +228,20 @@ state = "state2"
         assert_eq!(metadata.header.width, 32);
         assert_eq!(metadata.header.height, 32);
 
-        assert_eq!(metadata.states[0].name, "state1".to_string());
-        assert_eq!(metadata.states[0].dirs, Dirs::Four);
+        assert_eq!(metadata.states[0][0].1.name, "state1".to_string());
+        assert_eq!(metadata.states[0][0].1.dirs, Dirs::Four);
         assert_eq!(
-            metadata.states[0].frames,
+            metadata.states[0][0].1.frames,
             Frames::Delays(Vec::from([1.2, 1.0]))
         );
-        assert!(metadata.states[0].movement);
-        assert!(metadata.states[0].r#loop);
-        assert!(!metadata.states[0].rewind);
-        assert_eq!(metadata.states[0].hotspot, Some([12.0, 13.0, 0.0]));
+        assert!(metadata.states[0][0].1.movement);
+        assert!(metadata.states[0][0].1.r#loop);
+        assert!(!metadata.states[0][0].1.rewind);
+        assert_eq!(metadata.states[0][0].1.hotspot, Some([12.0, 13.0, 0.0]));
 
-        assert_eq!(metadata.states[1].name, "state2".to_string());
-        assert_eq!(metadata.states[1].dirs, Dirs::One);
-        assert_eq!(metadata.states[1].frames, Frames::One);
+        assert_eq!(metadata.states[1][0].1.name, "state2".to_string());
+        assert_eq!(metadata.states[1][0].1.dirs, Dirs::One);
+        assert_eq!(metadata.states[1][0].1.frames, Frames::One);
 
         dbg!(metadata);
     }

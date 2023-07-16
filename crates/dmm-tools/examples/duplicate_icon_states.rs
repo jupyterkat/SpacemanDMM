@@ -61,10 +61,10 @@ pub fn main() {
         let icon_file = IconFile::from_file(path).unwrap();
         let counts = icon_file
             .metadata
-            .state_map
+            .states
             .iter()
             .map(|(string, state_vec)| {
-                let state_sample = icon_file.metadata.states.get(state_vec[0]).unwrap();
+                let (_, state_sample) = state_vec.get(0).unwrap();
                 let new_name = if state_sample.movement {
                     format!("{string} (movement)")
                 } else {
@@ -72,7 +72,7 @@ pub fn main() {
                 };
                 let states = state_vec
                     .iter()
-                    .map(|state| (*state, icon_file.metadata.states.get(*state).unwrap()))
+                    .map(|(icon_index, state_index)| (*icon_index, state_index))
                     .collect::<Vec<_>>();
                 (new_name, states)
             })
