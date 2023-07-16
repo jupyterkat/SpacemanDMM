@@ -171,15 +171,15 @@ pub fn metadata(input: &str) -> IResult<&str, Metadata> {
         all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi))(input)?;
     let mut state_map: IndexMap<String, Vec<usize>, ahash::RandomState> = Default::default();
 
-    let mut cursor = 0;
-    for state in states.iter() {
+    states.iter().fold(0, |cursor, state| {
         state_map
             .entry(state.name.clone())
             .or_insert(Vec::new())
             .push(cursor as usize);
         let num_states = state.frames.get_num() * state.dirs.get_num();
-        cursor += num_states;
-    }
+        cursor + num_states
+    });
+
     Ok((
         tail,
         Metadata {
