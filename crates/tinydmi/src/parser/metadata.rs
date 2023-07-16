@@ -117,7 +117,7 @@ impl Metadata {
         Some((index, self.states.get(index)?))
     }
 
-    pub fn get_icon_states(&self, icon_state: &str) -> Option<Vec<(usize, &State)>> {
+    pub fn get_duplicate_icon_states(&self, icon_state: &str) -> Option<Vec<(usize, &State)>> {
         self.state_map.get(icon_state).map(|index| {
             index
                 .iter()
