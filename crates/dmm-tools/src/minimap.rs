@@ -199,8 +199,7 @@ fn clip(
     //    (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
     if loc_x < 0 {
         rect.x += (-loc_x) as u32;
-        let right_bottom_x = rect.bottom_right_x().checked_sub((-loc_x) as u32)?;
-        rect.width = right_bottom_x - rect.x;
+        rect.width = rect.width.checked_sub((-loc_x) as u32)?;
         loc_x = 0;
     }
 
@@ -213,8 +212,7 @@ fn clip(
 
     if loc_y < 0 {
         rect.y += (-loc_y) as u32;
-        let right_bottom_y = rect.bottom_right_y().checked_sub((-loc_y) as u32)?;
-        rect.height = right_bottom_y - rect.y;
+        rect.height = rect.height.checked_sub((-loc_y) as u32)?;
         loc_y = 0;
     }
 
