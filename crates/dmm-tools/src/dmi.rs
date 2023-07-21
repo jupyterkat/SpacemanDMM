@@ -51,8 +51,11 @@ impl IconFile {
         let mut reader = std::io::BufReader::new(file);
         let mut buf = vec![];
         reader.read_to_end(&mut buf)?;
+        IconFile::from_bytes(buf.as_slice())
+    }
 
-        let decoder = png::Decoder::new(buf.as_slice());
+    pub fn from_bytes(buf: &[u8]) -> Result<IconFile> {
+        let decoder = png::Decoder::new(buf);
         let info = decoder.read_info()?;
         let info = info.info();
         let chunk = info
