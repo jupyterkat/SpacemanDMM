@@ -191,7 +191,7 @@ use super::dmi;
 
 // OOB handling
 fn clip(
-    (width, height): dmi::Coordinate,
+    (width, height): (u32, u32),
     (mut loc_x, mut loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
@@ -203,7 +203,7 @@ fn clip(
         loc_x = 0;
     }
 
-    while loc_x + rect.width as i32 > width as i32 {
+    while loc_x + rect.width as i32 >= width as i32 {
         rect.width -= 1;
         if rect.width == 0 {
             return None;
@@ -216,7 +216,7 @@ fn clip(
         loc_y = 0;
     }
 
-    while loc_y + rect.height as i32 > height as i32 {
+    while loc_y + rect.height as i32 >= height as i32 {
         rect.height -= 1;
         if rect.height == 0 {
             return None;

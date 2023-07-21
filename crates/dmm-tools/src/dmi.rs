@@ -165,10 +165,20 @@ pub fn composite(
     }
     let image_view = from.view(crop_from.x, crop_from.y, crop_from.width, crop_from.height);
 
-    image_view.pixels().for_each(|(x, y, from_pix)| {
+    for (x, y, from_pix) in image_view.pixels() {
         let mut tinted_from = from_pix;
 
-        let to_pix = to.get_pixel_mut(x + pos_to.0, y + pos_to.1);
+        let Some(to_pix) = to
+            .get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
+                eprintln!(
+                    "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
+                    x + pos_to.0,
+                    y + pos_to.1,
+                    to.width(),
+                    to.height()
+                );
+                continue
+            };
 
         tinted_from
             .0
@@ -188,7 +198,7 @@ pub fn composite(
             (0..3).for_each(|i| to_pix[i] = 0)
         }
         to_pix[ALPHA] = out_alpha;
-    });
+    }
 
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
