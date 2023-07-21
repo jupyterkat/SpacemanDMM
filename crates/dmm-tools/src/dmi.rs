@@ -71,10 +71,7 @@ impl IconFile {
             image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
                 .decode()?;
 
-        let imagebuf = match imagebuf {
-            image::DynamicImage::ImageRgba8(img) => img,
-            _ => return Err(eyre::eyre!("Unsupported png type!")),
-        };
+        let imagebuf = imagebuf.into_rgba8();
 
         Ok(IconFile {
             metadata: tinydmi::parse(meta_text)?,
