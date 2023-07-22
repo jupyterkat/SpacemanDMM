@@ -169,8 +169,16 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
-            if let Some((loc, rect)) = clip((map_image.width(), map_image.height()), loc, rect) {
-                composite(&icon_file.image, &mut map_image, loc, rect, sprite.color)
+            if let Some((corrected_loc, corrected_rect)) =
+                clip((map_image.width(), map_image.height()), loc, rect)
+            {
+                composite(
+                    &icon_file.image,
+                    &mut map_image,
+                    corrected_loc,
+                    corrected_rect,
+                    sprite.color,
+                )
             }
         } else {
             let key = format!(
