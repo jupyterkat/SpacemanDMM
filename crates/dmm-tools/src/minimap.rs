@@ -203,8 +203,6 @@ fn clip(
     (mut loc_x, mut loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
-    //let (left_top_x, left_top_y, right_bottom_x, right_bottom_y) =
-    //    (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
     if loc_x < 0 {
         rect.x += (-loc_x) as u32;
         rect.width = rect.width.checked_sub((-loc_x) as u32)?;
@@ -213,9 +211,6 @@ fn clip(
 
     while loc_x + rect.width as i32 > width as i32 {
         rect.width -= 1;
-        if rect.width == 0 {
-            return None;
-        }
     }
 
     if loc_y < 0 {
@@ -226,40 +221,11 @@ fn clip(
 
     while loc_y + rect.height as i32 > height as i32 {
         rect.height -= 1;
-        if rect.height == 0 {
-            return None;
-        }
     }
-    /*
-    if loc.0 < 0 {
-        rect.0 += (-loc.0) as u32;
-        match rect.2.checked_sub((-loc.0) as u32) {
-            Some(s) => rect.2 = s,
-            None => return None, // out of the viewport
-        }
-        loc.0 = 0;
+
+    if rect.height == 0 || rect.width == 0 {
+        return None;
     }
-    while loc.0 + rect.2 as i32 > bounds.0 as i32 {
-        rect.2 -= 1;
-        if rect.2 == 0 {
-            return None;
-        }
-    }
-    if loc.1 < 0 {
-        rect.1 += (-loc.1) as u32;
-        match rect.3.checked_sub((-loc.1) as u32) {
-            Some(s) => rect.3 = s,
-            None => return None, // out of the viewport
-        }
-        loc.1 = 0;
-    }
-    while loc.1 + rect.3 as i32 > bounds.1 as i32 {
-        rect.3 -= 1;
-        if rect.3 == 0 {
-            return None;
-        }
-    }
-    */
     Some(((loc_x as u32, loc_y as u32), rect))
 }
 
