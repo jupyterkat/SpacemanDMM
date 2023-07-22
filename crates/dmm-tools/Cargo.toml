@@ -5,7 +5,6 @@ authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2018"
 
 [dependencies]
-inflate = "0.4.5"
 ndarray = "0.15.6"
 rand = "0.8.5"
 dreammaker = { path = "../dreammaker" }

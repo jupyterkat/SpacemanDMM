@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 interval-tree = { path = "../interval-tree" }
 builtins-proc-macro = { path = "../builtins-proc-macro" }
-png = "0.17.9"
 bitflags = "2.3.3"
 termcolor = "1.2.0"
 ordered-float = "3.7.0"
@@ -18,9 +17,6 @@ phf = { version = "0.11.2", features = ["macros"] }
 color_space = "0.5.3"
 ahash = "0.8.3"
 indexmap = "2.0.0"
-derivative = "2.2.0"
-eyre = "0.6.8"
-tinydmi = { path = "../tinydmi"}
 
 [dev-dependencies]
 walkdir = "2.3.3"

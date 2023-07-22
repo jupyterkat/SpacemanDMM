@@ -6,8 +6,6 @@ use std::{io::Read, path::Path};
 
 use eyre::Result;
 
-use tinydmi::prelude::Dir;
-
 /// Absolute x and y.
 pub type Coordinate = (u32, u32);
 
