@@ -76,7 +76,7 @@ impl IconFile {
 
         let imagebuf = imagebuf.into_rgba8();
 
-        Ok(IconFile {
+        Ok(Self {
             metadata: tinydmi::parse(meta_text)?,
             image: imagebuf,
         })
