@@ -24,13 +24,15 @@ pub struct RenderStateGuard<'a> {
     pub render_type: RenderType,
     renderer: &'a IconRenderer<'a>,
     state: &'a State,
+    index: usize,
 }
 
 impl<'a> RenderStateGuard<'a> {
     pub fn render<W: std::io::Write + std::io::Seek>(self, target: W) -> Result<()> {
+        let icon_index = IconIndex::new(self.index, self.state.name.as_str());
         match self.render_type {
-            RenderType::Png => self.renderer.render_to_png(self.state, target),
-            RenderType::Gif => self.renderer.render_gif(self.state, target),
+            RenderType::Png => self.renderer.render_to_png(self.state, icon_index, target),
+            RenderType::Gif => self.renderer.render_gif(self.state, icon_index, target),
         }
     }
 }
@@ -44,46 +46,60 @@ impl<'a> IconRenderer<'a> {
     /// Renders with either [`gif::Encoder`] or [`png::Encoder`] depending on whether the icon state is animated
     /// or not.
     /// Returns a [`RenderType`] to help you determine how to treat the written data.
-    pub fn prepare_render(&self, icon_state: &str) -> Result<RenderStateGuard> {
+    pub fn prepare_render(&self, icon_state: IconIndex<'_>) -> Result<RenderStateGuard> {
         self.prepare_render_state(
-            self.source
-                .get_icon_state(icon_state)
-                .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?,
+            self.source.get_icon_state(icon_state).ok_or_else(|| {
+                eyre::eyre!(
+                    "Icon state {}:{} not found!",
+                    icon_state.index(),
+                    icon_state.name()
+                )
+            })?,
+            icon_state.index(),
         )
     }
 
     /// This is here so that duplicate icon states can be handled by not relying on the btreemap
     /// of state names in [`Metadata`].
-    pub fn prepare_render_state(&'a self, icon_state: &'a State) -> Result<RenderStateGuard> {
+    pub fn prepare_render_state(
+        &'a self,
+        icon_state: &'a State,
+        index: usize,
+    ) -> Result<RenderStateGuard> {
         match icon_state.is_animated() {
             false => Ok(RenderStateGuard {
                 renderer: self,
                 state: icon_state,
                 render_type: RenderType::Png,
+                index,
             }),
             true => Ok(RenderStateGuard {
                 renderer: self,
                 state: icon_state,
                 render_type: RenderType::Gif,
+                index,
             }),
         }
     }
 
     /// Instead of writing to a file, this gives a Vec<Image> of each frame/dir as it would be composited
     /// for a file.
-    pub fn render_to_images(&self, icon_state: &str) -> Result<Vec<RgbaImage>> {
-        let state = self
-            .source
-            .get_icon_state(icon_state)
-            .ok_or_else(|| eyre::eyre!("icon_state {icon_state} not found"))?;
-        Ok(self.render_frames(state))
+    pub fn render_to_images(&self, icon_index: IconIndex<'_>) -> Result<Vec<RgbaImage>> {
+        let state = self.source.get_icon_state(icon_index).ok_or_else(|| {
+            eyre::eyre!(
+                "Icon state {}:{} not found!",
+                icon_index.index(),
+                icon_index.name()
+            )
+        })?;
+        Ok(self.render_frames(state, icon_index))
     }
 }
 
 /// Private helpers
 impl<'a> IconRenderer<'a> {
     /// Helper for render_to_images- not used for render_gif because it's less efficient.
-    fn render_frames(&self, icon_state: &State) -> Vec<RgbaImage> {
+    fn render_frames(&self, icon_state: &State, icon_index: IconIndex<'_>) -> Vec<RgbaImage> {
         let frames = match &icon_state.frames {
             Frames::One => 1,
             Frames::Count(count) => *count,
@@ -97,7 +113,7 @@ impl<'a> IconRenderer<'a> {
             Either::Right(0..frames)
         };
         for frame in range {
-            self.render_dirs(icon_state, &mut canvas, frame);
+            self.render_dirs(icon_state, icon_index, &mut canvas, frame);
             vec.push(canvas.clone());
             canvas
                 .pixels_mut()
@@ -145,12 +161,18 @@ impl<'a> IconRenderer<'a> {
     }
 
     /// Renders each direction to the same canvas, offsetting them to the right
-    fn render_dirs(&self, icon_state: &State, canvas: &mut RgbaImage, frame: u32) {
+    fn render_dirs(
+        &self,
+        icon_state: &State,
+        icon_index: IconIndex<'_>,
+        canvas: &mut RgbaImage,
+        frame: u32,
+    ) {
         for (dir_no, dir) in Self::ordered_dirs(icon_state.dirs).iter().enumerate() {
             let frame_idx = self
                 .source
                 .metadata
-                .get_index_of_frame(&icon_state.name, *dir, frame)
+                .get_index_of_frame(icon_index, *dir, frame)
                 .unwrap();
             let frame_rect = self.source.rect_of_index(frame_idx);
             composite(
@@ -167,6 +189,7 @@ impl<'a> IconRenderer<'a> {
     fn render_gif<W: std::io::Write + std::io::Seek>(
         &self,
         icon_state: &State,
+        icon_index: IconIndex<'_>,
         target: W,
     ) -> Result<()> {
         if !icon_state.is_animated() {
@@ -193,7 +216,7 @@ impl<'a> IconRenderer<'a> {
         };
 
         for frame in range {
-            self.render_dirs(icon_state, &mut canvas, frame as u32);
+            self.render_dirs(icon_state, icon_index, &mut canvas, frame as u32);
             // image::Frame delays are measured in Durations
             let frame = image::Frame::from_parts(
                 canvas.clone(),
@@ -217,11 +240,12 @@ impl<'a> IconRenderer<'a> {
     fn render_to_png<W: std::io::Write + std::io::Seek>(
         &self,
         icon_state: &State,
+        icon_index: IconIndex<'_>,
         mut target: W,
     ) -> Result<()> {
         let mut canvas = self.get_canvas(icon_state.dirs);
 
-        self.render_dirs(icon_state, &mut canvas, 0);
+        self.render_dirs(icon_state, icon_index, &mut canvas, 0);
 
         canvas.write_to(&mut target, ImageOutputFormat::Png)?;
         Ok(())

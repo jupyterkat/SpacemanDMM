@@ -80,9 +80,12 @@ impl IconFile {
         })
     }
 
-    pub fn get_icon(&self, index: usize) -> image::SubImage<&image::RgbaImage> {
+    pub fn get_icon(&self, index: IconLocation) -> image::SubImage<&image::RgbaImage> {
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = (index as u32 % icon_count, index as u32 / icon_count);
+        let (icon_x, icon_y) = (
+            index.into_inner() as u32 % icon_count,
+            index.into_inner() as u32 / icon_count,
+        );
 
         self.image.view(
             icon_x as u32,
@@ -92,7 +95,7 @@ impl IconFile {
         )
     }
 
-    pub fn rect_of(&self, icon_state: &str, dir: Dir) -> Option<Rect> {
+    pub fn rect_of(&self, icon_state: IconIndex<'_>, dir: Dir) -> Option<Rect> {
         if self.metadata.states.is_empty() {
             return Some(Rect {
                 x: 0,
@@ -127,7 +130,7 @@ impl IconFile {
         }
     }
 
-    pub fn get_icon_state(&self, icon_state: &str) -> Option<&tinydmi::prelude::State> {
+    pub fn get_icon_state(&self, icon_state: IconIndex<'_>) -> Option<&tinydmi::prelude::State> {
         self.metadata
             .get_icon_state(icon_state)
             .map(|(_, state)| state)

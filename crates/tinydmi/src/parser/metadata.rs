@@ -111,21 +111,15 @@ impl Metadata {
         Ok(metadata)
     }
 
-    pub fn get_icon_state(&self, icon_state: &str) -> Option<(usize, &State)> {
-        let (icon_index, state) = self.states.get(icon_state)?.get(0)?;
+    pub fn get_icon_state(&self, icon_state: IconIndex<'_>) -> Option<(IconLocation, &State)> {
+        let (icon_index, state) = self.states.get(icon_state.1)?.get(icon_state.0)?;
         Some((*icon_index, state))
     }
 
-    pub fn get_icon_state_indexed(
+    pub fn get_duplicate_icon_states(
         &self,
         icon_state: &str,
-        index: usize,
-    ) -> Option<(usize, &State)> {
-        let (icon_index, state) = self.states.get(icon_state)?.get(index)?;
-        Some((*icon_index, state))
-    }
-
-    pub fn get_duplicate_icon_states(&self, icon_state: &str) -> Option<Vec<(usize, &State)>> {
+    ) -> Option<Vec<(IconLocation, &State)>> {
         self.states.get(icon_state).map(|index| {
             index
                 .iter()
@@ -134,7 +128,7 @@ impl Metadata {
         })
     }
 
-    pub fn get_index_of_dir(&self, icon_state: &str, dir: Dir) -> Option<u32> {
+    pub fn get_index_of_dir(&self, icon_state: IconIndex<'_>, dir: Dir) -> Option<u32> {
         let (first_index, first_state) = self.get_icon_state(icon_state)?;
 
         let dir_idx = match (first_state.dirs, dir) {
@@ -148,12 +142,12 @@ impl Metadata {
             (_, Dir::North) => 1,
             (_, _) => 0,
         };
-        Some(first_index as u32 + dir_idx)
+        Some(first_index.into_inner() as u32 + dir_idx)
     }
 
     pub fn get_index_of_frame(
         &self,
-        icon_state: &str,
+        icon_state: IconIndex<'_>,
         dir: super::dir::Dir,
         frame: u32,
     ) -> Option<u32> {
@@ -170,18 +164,58 @@ impl Metadata {
             (_, Dir::North) => 1,
             (_, _) => 0,
         };
-        Some((first_index as u32 + dir_idx) + frame * first_state.dirs.get_num())
+        Some((first_index.into_inner() as u32 + dir_idx) + frame * first_state.dirs.get_num())
     }
 }
 
-pub type StateMap = IndexMap<String, Vec<(IconIndex, State)>, ahash::RandomState>;
-pub type IconIndex = usize;
-pub type StateIndex = usize;
+pub type StateMap = IndexMap<String, Vec<(IconLocation, State)>, ahash::RandomState>;
+// Used to find the actual location on the spritesheet
+#[derive(Clone, Copy, Debug)]
+pub struct IconLocation(usize);
+
+impl IconLocation {
+    pub fn new(num: usize) -> IconLocation {
+        IconLocation(num)
+    }
+    pub fn into_inner(&self) -> usize {
+        self.0
+    }
+}
+impl From<usize> for IconLocation {
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+// Used to index duplicates
+#[derive(Clone, Copy, Debug)]
+pub struct IconIndex<'a>(usize, &'a str);
+
+impl<'a> IconIndex<'a> {
+    pub fn new(index: usize, icon_name: &'a str) -> IconIndex<'a> {
+        IconIndex(index, icon_name)
+    }
+    pub fn default_icon(icon_name: &'a str) -> IconIndex<'a> {
+        IconIndex(0, icon_name)
+    }
+    pub fn name(&self) -> &'a str {
+        self.1
+    }
+    pub fn index(&self) -> usize {
+        self.0
+    }
+}
+
+impl<'a> From<(usize, &'a str)> for IconIndex<'a> {
+    fn from(value: (usize, &'a str)) -> Self {
+        Self(value.0, value.1)
+    }
+}
 
 pub fn metadata(input: &str) -> IResult<&str, Metadata> {
     let (tail, (header, states)) =
         all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi))(input)?;
-    let mut state_map: IndexMap<String, Vec<(usize, State)>, ahash::RandomState> =
+    let mut state_map: IndexMap<String, Vec<(IconLocation, State)>, ahash::RandomState> =
         Default::default();
 
     states.into_iter().fold(0, |cursor, state| {
@@ -189,7 +223,7 @@ pub fn metadata(input: &str) -> IResult<&str, Metadata> {
         state_map
             .entry(state.name.clone())
             .or_insert(Vec::new())
-            .push((cursor as usize, state));
+            .push((IconLocation(cursor as usize), state));
         cursor + num_states
     });
 

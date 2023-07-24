@@ -3,6 +3,7 @@ use std::sync::RwLock;
 
 use dreammaker as dm;
 use ndarray::Axis;
+use tinydmi::parser::metadata::IconIndex;
 
 use crate::dmi::composite;
 use crate::dmm::{Map, Prefab, ZLevel};
@@ -161,7 +162,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
             None => continue,
         };
 
-        if let Some(rect) = icon_file.rect_of(sprite.icon_state, sprite.dir) {
+        if let Some(rect) = icon_file.rect_of(IconIndex::new(0, sprite.icon_state), sprite.dir) {
             let pixel_x = sprite.ofs_x;
             let pixel_y = sprite.ofs_y + icon_file.metadata.header.height as i32;
             let loc = (

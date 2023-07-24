@@ -4,7 +4,7 @@ use image::GenericImageView;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
-use tinydmi::prelude::State;
+use tinydmi::prelude::{IconLocation, State};
 
 fn is_visible(entry: &DirEntry) -> bool {
     entry
@@ -33,15 +33,15 @@ fn files_with_extension<F: FnMut(&Path)>(ext: &str, mut f: F) {
     }
 }
 
-fn all_same(icon_file: &IconFile, states: &[(usize, &State)]) -> bool {
+fn all_same(icon_file: &IconFile, states: &[(IconLocation, &State)]) -> bool {
     let ((first_index, first_state), rest) = states.split_first().unwrap();
     for (state_index, state) in rest {
         if state.dirs != first_state.dirs || state.frames != first_state.frames {
             return false;
         }
         for i in 0..state.num_sprites() {
-            let rect1 = icon_file.get_icon(first_index + i);
-            let rect2 = icon_file.get_icon(state_index + i);
+            let rect1 = icon_file.get_icon((first_index.into_inner() + i).into());
+            let rect2 = icon_file.get_icon((state_index.into_inner() + i).into());
 
             if rect1
                 .pixels()

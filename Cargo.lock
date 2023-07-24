@@ -1751,6 +1751,7 @@ dependencies = [
  "eyre",
  "indexmap",
  "nom",
+ "num-traits",
 ]
 
 [[package]]
