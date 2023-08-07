@@ -164,7 +164,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
 
         if let Some(rect) = icon_file.rect_of(IconIndex::new(0, sprite.icon_state), sprite.dir) {
             let pixel_x = sprite.ofs_x;
-            let pixel_y = sprite.ofs_y;
+            let pixel_y = sprite.ofs_y + icon_file.metadata.header.height as i32;
             let loc = (
                 ((loc.0 - ctx.min.0 as u32) * TILE_SIZE) as i32 + pixel_x,
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
