@@ -167,7 +167,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
             let pixel_y = sprite.ofs_y;
             let loc = (
                 ((loc.0 - ctx.min.0 as u32) * TILE_SIZE) as i32 + pixel_x,
-                ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 + pixel_y,
+                ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
             if let Some((corrected_loc, corrected_rect)) =
