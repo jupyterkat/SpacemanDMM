@@ -211,7 +211,7 @@ fn clip(
     }
 
     while loc_x + rect.width as i32 > width as i32 {
-        rect.width -= 1;
+        rect.width = rect.width.saturating_sub(1);
     }
 
     if loc_y < 0 {
@@ -221,7 +221,7 @@ fn clip(
     }
 
     while loc_y + rect.height as i32 > height as i32 {
-        rect.height -= 1;
+        rect.height = rect.height.saturating_sub(1);
     }
 
     if rect.height == 0 || rect.width == 0 {
