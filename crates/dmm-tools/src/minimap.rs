@@ -187,7 +187,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
                 sprite.icon, sprite.icon_state
             );
             if !ctx.errors.read().unwrap().contains(&key) {
-                eprintln!("{}", key);
+                tracing::debug!("{}", key);
                 ctx.errors.write().unwrap().insert(key);
             }
         }
@@ -211,7 +211,7 @@ fn clip(
     }
 
     while loc_x + rect.width as i32 > width as i32 {
-        rect.width = rect.width.saturating_sub(1);
+        rect.width = rect.width.checked_sub(1)?;
     }
 
     if loc_y < 0 {
@@ -221,7 +221,7 @@ fn clip(
     }
 
     while loc_y + rect.height as i32 > height as i32 {
-        rect.height = rect.height.saturating_sub(1);
+        rect.height = rect.height.checked_sub(1)?;
     }
 
     if rect.height == 0 || rect.width == 0 {
@@ -596,7 +596,7 @@ fn plane_of<'s, T: GetVar<'s> + ?Sized>(objtree: &'s ObjectTree, atom: &T) -> i3
     match atom.get_var("plane", objtree) {
         Constant::Float(i) => *i as i32,
         other => {
-            eprintln!("not a plane: {:?} on {:?}", other, atom.get_path());
+            tracing::debug!("not a plane: {:?} on {:?}", other, atom.get_path());
             0
         }
     }
@@ -606,7 +606,7 @@ pub(crate) fn layer_of<'s, T: GetVar<'s> + ?Sized>(objtree: &'s ObjectTree, atom
     match atom.get_var("layer", objtree) {
         &Constant::Float(f) => Layer::from(f),
         other => {
-            eprintln!("not a layer: {:?} on {:?}", other, atom.get_path());
+            tracing::debug!("not a layer: {:?} on {:?}", other, atom.get_path());
             Layer::from(2)
         }
     }

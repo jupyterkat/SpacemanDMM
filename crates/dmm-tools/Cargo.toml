@@ -8,7 +8,7 @@ edition = "2018"
 ndarray = "0.15.6"
 rand = "0.8.5"
 dreammaker = { path = "../dreammaker" }
-tinydmi = { path = "../tinydmi"}
+tinydmi = { path = "../tinydmi" }
 indexmap = "2.0.0"
 ahash = "0.8.3"
 either = "1.8.1"
@@ -16,6 +16,7 @@ typed-arena = "2.0.2"
 image = "0.24.6"
 png = "0.17.9"
 eyre = "0.6.8"
+tracing = "0.1"
 
 [dependencies.bytemuck]
 version = "1.13.1"

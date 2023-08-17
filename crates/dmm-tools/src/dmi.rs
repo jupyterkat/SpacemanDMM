@@ -157,7 +157,7 @@ pub fn composite(
     if crop_from.x + crop_from.width > from.width()
         || crop_from.y + crop_from.height > from.height()
     {
-        eprintln!(
+        tracing::error!(
             "Cannot get subview, out of bounds! {crop_from:?}, (img_width, img_height) {}:{}",
             from.width(),
             from.height()
@@ -171,7 +171,7 @@ pub fn composite(
 
         let Some(to_pix) = to
             .get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
-                eprintln!(
+                tracing::error!(
                     "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
                     x + pos_to.0,
                     y + pos_to.1,
