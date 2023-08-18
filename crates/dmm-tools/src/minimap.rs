@@ -206,21 +206,19 @@ fn clip(
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
     if loc_x < 0 {
         rect.x += (-loc_x) as u32;
-        rect.width = rect.width.checked_sub((-loc_x) as u32)?;
         loc_x = 0;
     }
 
-    while loc_x + rect.width as i32 > width as i32 {
+    while loc_x as u32 + rect.width >= width {
         rect.width = rect.width.checked_sub(1)?;
     }
 
     if loc_y < 0 {
         rect.y += (-loc_y) as u32;
-        rect.height = rect.height.checked_sub((-loc_y) as u32)?;
         loc_y = 0;
     }
 
-    while loc_y + rect.height as i32 > height as i32 {
+    while loc_y as u32 + rect.height >= height {
         rect.height = rect.height.checked_sub(1)?;
     }
 
