@@ -11,9 +11,9 @@ dreammaker = { path = "../dreammaker" }
 tinydmi = { path = "../tinydmi" }
 indexmap = "2.0.0"
 ahash = "0.8.3"
-either = "1.8.1"
+either = "1.9.0"
 typed-arena = "2.0.2"
-image = "0.24.6"
+image = "0.24.7"
 png = "0.17.9"
 eyre = "0.6.8"
 tracing = "0.1"

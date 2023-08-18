@@ -9,8 +9,8 @@ edition = "2018"
 dreammaker = { path = "../dreammaker" }
 pulldown-cmark = "0.9.3"
 tera = "1.19.0"
-serde = "1.0.171"
-serde_derive = "1.0.171"
+serde = "1.0.183"
+serde_derive = "1.0.183"
 walkdir = "2.3.3"
 git2 = { version = "0.17.2", default-features = false }
 

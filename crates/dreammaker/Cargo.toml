@@ -7,11 +7,11 @@ edition = "2018"
 [dependencies]
 interval-tree = { path = "../interval-tree" }
 builtins-proc-macro = { path = "../builtins-proc-macro" }
-bitflags = "2.3.3"
+bitflags = "2.4.0"
 termcolor = "1.2.0"
-ordered-float = "3.7.0"
-serde = { version = "1.0.171", features = ["derive"] }
-serde_derive = "1.0.171"
+ordered-float = "3.8.0"
+serde = { version = "1.0.183", features = ["derive"] }
+serde_derive = "1.0.183"
 toml = "0.7.6"
 phf = { version = "0.11.2", features = ["macros"] }
 color_space = "0.5.3"
