@@ -209,7 +209,7 @@ fn clip(
         loc_x = 0;
     }
 
-    while loc_x as u32 + rect.width >= width {
+    while loc_x as u32 + rect.width > width {
         rect.width = rect.width.checked_sub(1)?;
     }
 
@@ -218,7 +218,7 @@ fn clip(
         loc_y = 0;
     }
 
-    while loc_y as u32 + rect.height >= height {
+    while loc_y as u32 + rect.height > height {
         rect.height = rect.height.checked_sub(1)?;
     }
 
