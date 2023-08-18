@@ -612,6 +612,7 @@ pub struct AnalyzeObjectTree<'o> {
 
     sleeping_procs: ViolatingProcs<'o>,
     impure_procs: ViolatingProcs<'o>,
+    /// Procs with waitfor=0 or waitfor=FALSE
     waitfor_procs: HashSet<ProcRef<'o>>,
 
     sleeping_overrides: ViolatingOverrides<'o>,
@@ -1781,16 +1782,13 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 if name != "waitfor" {
                     return ControlFlow::allfalse();
                 }
-
-                match value.as_term() {
-                    Some(Term::Int(0)) => {
-                        self.env.waitfor_procs.insert(self.proc_ref);
-                    }
-                    Some(Term::Ident(i)) if i == "FALSE" => {
-                        self.env.waitfor_procs.insert(self.proc_ref);
-                    }
-                    _ => (),
-                };
+                if match value.as_term() {
+                    Some(Term::Int(0)) => true,
+                    Some(Term::Ident(i)) if i == "FALSE" => true,
+                    _ => false,
+                } {
+                    self.env.waitfor_procs.insert(self.proc_ref);
+                }
             }
             Statement::Setting { .. } => {}
             Statement::Spawn { delay, block } => {

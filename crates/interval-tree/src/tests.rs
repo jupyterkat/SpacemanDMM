@@ -129,17 +129,16 @@ fn test_range_iter_non_pointwise() {
 
 fn random_range() -> RangeInclusive<u64> {
     let offset = rand::random::<u64>();
-    let len: u64;
-    if rand::random::<bool>() {
-        len = cmp::min(
+    let len: u64 = if rand::random::<bool>() {
+        cmp::min(
             rand::random::<u64>() % 500,
             0xff_ff_ff_ff_ff_ff_ff_ff - offset,
         )
     } else {
-        len = rand::random::<u64>() % (0xff_ff_ff_ff_ff_ff_ff_ff - offset)
-    }
+        rand::random::<u64>() % (0xff_ff_ff_ff_ff_ff_ff_ff - offset)
+    };
 
-    return RangeInclusive::new(offset, offset + len);
+    RangeInclusive::new(offset, offset + len)
 }
 
 #[test]
@@ -164,7 +163,7 @@ fn test_range_iter_nontrivial() {
         let should = set
             .iter()
             .filter(|r| crate::range::intersect(&query, r))
-            .map(|r| r.clone())
+            .copied()
             .collect::<Vec<RangeInclusive<u64>>>();
         let is = t
             .range(query)

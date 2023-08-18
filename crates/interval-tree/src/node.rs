@@ -234,7 +234,7 @@ pub mod tests {
     type Node<V> = super::Node<u64, V>;
 
     /// returns true iff key is stored in the tree given by root
-    pub fn contains<V>(key: &RangeInclusive<u64>, root: &Box<Node<V>>) -> bool {
+    pub fn contains<V>(key: &RangeInclusive<u64>, root: &Node<V>) -> bool {
         root.search(key).is_some()
     }
 
@@ -248,16 +248,10 @@ pub mod tests {
         root: &'a Box<Node<V>>,
     ) -> Option<(&'a RangeInclusive<u64>, &'a [V])> {
         match root.key.cmp(key) {
-            Ordering::Equal => root
-                .right
-                .as_ref()
-                .map_or(None, |succ| Some(succ.min_pair())),
-            Ordering::Less => root
-                .right
-                .as_ref()
-                .map_or(None, |succ| min_after(key, succ)),
+            Ordering::Equal => root.right.as_ref().map(|succ| succ.min_pair()),
+            Ordering::Less => root.right.as_ref().and_then(|succ| min_after(key, succ)),
             Ordering::Greater => match root.left {
-                Some(ref succ) => min_after(key, &succ).or(Some((&root.key, &root.data))),
+                Some(ref succ) => min_after(key, succ).or(Some((&root.key, &root.data))),
                 None => Some((&root.key, &root.data)),
             },
         }
@@ -287,10 +281,10 @@ pub mod tests {
         }
         t
     }
-    fn is_sorted_left<V>(node: &Box<Node<V>>) -> bool {
+    fn is_sorted_left<V>(node: &Node<V>) -> bool {
         node.left.as_ref().map_or(true, |succ| succ.key < node.key)
     }
-    fn is_sorted_right<V>(node: &Box<Node<V>>) -> bool {
+    fn is_sorted_right<V>(node: &Node<V>) -> bool {
         node.right.as_ref().map_or(true, |succ| succ.key > node.key)
     }
     fn is_interval_node<V>(node: &Box<Node<V>>) -> bool {
@@ -301,7 +295,7 @@ pub mod tests {
                 subtree_max(&node.left),
                 cmp::max(subtree_max(&node.right), node.key.end),
             );
-        return sorted && balanced && proper_max;
+        sorted && balanced && proper_max
     }
 
     pub fn is_interval_tree<V>(root: &Option<Box<Node<V>>>) -> bool {

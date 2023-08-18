@@ -95,7 +95,7 @@ impl<K: Ord + Clone, V> IntervalTree<K, V> {
     /// ```
     pub fn remove(&mut self, key: RangeInclusive<K>) {
         if let Some(box_to_node) = self.root.take() {
-            self.root = box_to_node.delete(key)
+            self.root = box_to_node.delete(key);
         }
     }
 
@@ -246,8 +246,7 @@ mod tests {
 
     fn random_range() -> RangeInclusive<u64> {
         let offset = rand::random::<u64>() % 50;
-        let len: u64;
-        len = rand::random::<u64>() % 50;
+        let len: u64 = rand::random::<u64>() % 50;
         crate::range(offset, offset + len)
     }
 
@@ -267,6 +266,5 @@ mod tests {
                 assert!(is_interval_tree(&t.root));
             };
         }
-        return;
     }
 }

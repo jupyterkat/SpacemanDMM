@@ -339,6 +339,7 @@ impl<'ctx> Iterator for IncludeStack<'ctx> {
                     if let Some(t) = lexer.next() {
                         return Some(t);
                     }
+                    // else fallthrough to pop()
                 }
                 Some(&mut Include::Expansion {
                     ref mut tokens,
@@ -348,6 +349,7 @@ impl<'ctx> Iterator for IncludeStack<'ctx> {
                     if let Some(token) = tokens.pop_front() {
                         return Some(LocatedToken { location, token });
                     }
+                    // else fallthrough to pop()
                 }
                 None => return None,
             }
