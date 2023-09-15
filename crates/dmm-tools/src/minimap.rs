@@ -216,7 +216,6 @@ fn clip(
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
     if loc_x < 0 {
-        rect.x += (-loc_x) as u32;
         loc_x = 0;
     }
 
@@ -225,7 +224,6 @@ fn clip(
     }
 
     if loc_y < 0 {
-        rect.y += (-loc_y) as u32;
         loc_y = 0;
     }
 
