@@ -621,6 +621,23 @@ impl<'o> WalkProc<'o> {
                 self.visit_arguments(args);
                 StaticType::None
             }
+
+            Term::GlobalCall(name, args) => {
+                if let Some(proc) = self.objtree.root().get_proc(name) {
+                    self.visit_call(location, self.objtree.root(), proc, args, false)
+                } else {
+                    self.visit_arguments(args);
+                    StaticType::None
+                }
+            }
+            Term::GlobalIdent(name) => {
+                if let Some(decl) = self.objtree.root().get_var_declaration(name) {
+                    self.tab.use_symbol(decl.id, location);
+                    self.static_type(&decl.var_type.type_path)
+                } else {
+                    StaticType::None
+                }
+            }
         }
     }
 
@@ -712,6 +729,7 @@ impl<'o> WalkProc<'o> {
                 }
             }
             Follow::Field(_, name) => self.visit_field(location, lhs, name),
+            Follow::StaticField(name) => self.visit_field(location, lhs, name),
             Follow::Call(_, name, arguments) => {
                 if let Some(ty) = lhs.basic_type() {
                     if let Some(proc) = ty.get_proc(name) {
@@ -724,6 +742,14 @@ impl<'o> WalkProc<'o> {
                     self.visit_arguments(arguments);
                     StaticType::None
                 }
+            }
+            Follow::ProcReference(name) => {
+                if let Some(ty) = lhs.basic_type() {
+                    if let Some(decl) = ty.get_proc_declaration(name) {
+                        self.tab.use_symbol(decl.id, location);
+                    }
+                }
+                StaticType::None
             }
         }
     }

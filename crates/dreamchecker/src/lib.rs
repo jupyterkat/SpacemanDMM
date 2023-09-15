@@ -1146,9 +1146,13 @@ pub fn check_var_defs(objtree: &ObjectTree, context: &Context) {
                     continue;
                 }
 
-                let Some(parentvar) = parent.vars.get(varname) else { continue };
+                let Some(parentvar) = parent.vars.get(varname) else {
+                    continue;
+                };
 
-                let Some(decl) = &parentvar.declaration else { continue };
+                let Some(decl) = &parentvar.declaration else {
+                    continue;
+                };
 
                 if let Some(mydecl) = &typevar.declaration {
                     if typevar.value.location.is_builtins() {
@@ -2181,6 +2185,19 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     Analysis::empty()
                 }
             }
+            Term::GlobalIdent(global_name) => {
+                if let Some(decl) = self.objtree.root().get_var_declaration(global_name) {
+                    let mut ana = self
+                        .static_type(location, &decl.var_type.type_path)
+                        .with_fix_hint(decl.location, "add additional type info here");
+                    ana.is_impure = Some(true);
+                    ana
+                } else {
+                    error(location, format!("undefined global var: {:?}", global_name))
+                        .register(self.context);
+                    Analysis::empty()
+                }
+            }
 
             Term::Expr(expr) => self.visit_expression(location, expr, type_hint, local_vars),
             Term::Prefab(prefab) => {
@@ -2273,6 +2290,18 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     error(location, format!("proc has no parent: {}", self.proc_ref))
                         .with_errortype("proc_has_no_parent")
                         .register(self.context);
+                    Analysis::empty()
+                }
+            }
+            Term::GlobalCall(global_name, args) => {
+                if let Some(proc) = self.objtree.root().get_proc(global_name) {
+                    self.visit_call(location, self.objtree.root(), proc, args, true, local_vars)
+                } else {
+                    error(
+                        location,
+                        format!("undefined global proc: {:?}", global_name),
+                    )
+                    .register(self.context);
                     Analysis::empty()
                 }
             }
@@ -2546,6 +2575,11 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     Analysis::empty()
                 }
             }
+            Follow::StaticField(name) => {
+                // TODO
+                Analysis::empty()
+            }
+
             Follow::Call(kind, name, arguments) => {
                 if let Some(ty) = lhs.static_ty.basic_type() {
                     self.check_type_sleepers(ty, location, name);
@@ -2606,6 +2640,10 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     .register(self.context);
                     Analysis::empty()
                 }
+            }
+            Follow::ProcReference(name) => {
+                // TODO
+                Analysis::empty()
             }
         }
     }
@@ -2681,7 +2719,9 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
         bit_op: BinaryOp,
         bool_op: BinaryOp,
     ) {
-        let Expression::Base { follow, .. } = lhs else { return };
+        let Expression::Base { follow, .. } = lhs else {
+            return;
+        };
         let any_not = follow
             .iter()
             .any(|f| matches!(f.elem, Follow::Unary(UnaryOp::Not)));
@@ -2959,20 +2999,35 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
         if proc.ty().is_root() && proc.name() == "filter" {
             let Some(typename) = param_name_map.get("type") else {
                 if !arglist_used {
-                    error(location, "filter() called without mandatory keyword parameter 'type'")
-                        .register(self.context);
+                    error(
+                        location,
+                        "filter() called without mandatory keyword parameter 'type'",
+                    )
+                    .register(self.context);
                 } // regardless, we're done here
-                return Analysis::empty()
+                return Analysis::empty();
             };
             let Some(Constant::String(typevalue)) = &typename.value else {
-                error(location, format!("filter() called with non-string type keyword parameter value '{:?}'", typename.value))
-                    .register(self.context);
-                return Analysis::empty()
+                error(
+                    location,
+                    format!(
+                        "filter() called with non-string type keyword parameter value '{:?}'",
+                        typename.value
+                    ),
+                )
+                .register(self.context);
+                return Analysis::empty();
             };
             let Some(arglist) = VALID_FILTER_TYPES.get(typevalue) else {
-                error(location, format!("filter() called with invalid type keyword parameter value '{}'", typevalue))
-                    .register(self.context);
-                return Analysis::empty()
+                error(
+                    location,
+                    format!(
+                        "filter() called with invalid type keyword parameter value '{}'",
+                        typevalue
+                    ),
+                )
+                .register(self.context);
+                return Analysis::empty();
             };
             for arg in param_name_map.keys() {
                 if *arg != "type" && !arglist.iter().any(|&x| x == *arg) {

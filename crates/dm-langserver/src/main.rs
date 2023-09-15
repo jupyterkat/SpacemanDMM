@@ -178,7 +178,11 @@ impl DiagnosticsTracker {
             } else {
                 let mut notes = Vec::with_capacity(error.notes().len());
                 for note in error.notes().iter() {
-                    let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue };
+                    let Some(uri) =
+                        DiagnosticsTracker::file_url(root, file_list, note.location().file)
+                    else {
+                        continue;
+                    };
                     notes.push(lsp_types::DiagnosticRelatedInformation {
                         location: lsp_types::Location {
                             uri,
@@ -198,7 +202,9 @@ impl DiagnosticsTracker {
                 related_information,
                 ..Default::default()
             };
-            let Some(uri) = DiagnosticsTracker::file_url(root, file_list, loc.file) else { continue };
+            let Some(uri) = DiagnosticsTracker::file_url(root, file_list, loc.file) else {
+                continue;
+            };
             map.entry(uri).or_insert_with(Default::default).push(diag);
 
             if !related_info {
@@ -211,7 +217,11 @@ impl DiagnosticsTracker {
                         source: component_to_source(error.component()),
                         ..Default::default()
                     };
-                    let Some(uri) = DiagnosticsTracker::file_url(root, file_list, note.location().file) else { continue };
+                    let Some(uri) =
+                        DiagnosticsTracker::file_url(root, file_list, note.location().file)
+                    else {
+                        continue;
+                    };
                     map.entry(uri).or_insert_with(Default::default).push(diag);
                 }
             }

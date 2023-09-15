@@ -20,7 +20,9 @@ impl Debugger {
                 }
 
                 let Some(frame_id) = params.frameId else {
-                    return Err(Box::new(GenericError("Must select a stack frame to evaluate in")));
+                    return Err(Box::new(GenericError(
+                        "Must select a stack frame to evaluate in",
+                    )));
                 };
 
                 let (thread, frame_no) = extools.get_thread_by_frame_id(frame_id)?;

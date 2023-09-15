@@ -178,7 +178,7 @@ impl Context {
     /// Push an error or other diagnostic to the context.
     pub fn register_error(&self, error: DMError) {
         let Some(error) = self.config.borrow().set_configured_severity(error) else {
-            return // errortype is disabled
+            return; // errortype is disabled
         };
         // ignore errors with severity above configured level
         if !self.config.borrow().registerable_error(&error) {

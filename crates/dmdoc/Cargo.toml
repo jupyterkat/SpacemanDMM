@@ -3,20 +3,20 @@ name = "dmdoc"
 version = "1.7.3"
 authors = ["Tad Hardesty <tad@platymuus.com>"]
 homepage = "https://github.com/SpaceManiac/SpacemanDMM/blob/master/crates/dmdoc/README.md"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 dreammaker = { path = "../dreammaker" }
 pulldown-cmark = "0.9.3"
-tera = "1.19.0"
-serde = "1.0.183"
-serde_derive = "1.0.183"
-walkdir = "2.3.3"
-git2 = { version = "0.17.2", default-features = false }
+tera = "1.19.1"
+serde = "1.0.188"
+serde_derive = "1.0.188"
+walkdir = "2.4.0"
+git2 = { version = "0.18.0", default-features = false }
 
 [dev-dependencies]
-walkdir = "2.3.3"
+walkdir = "2.4.0"
 
 [build-dependencies]
-chrono = "0.4.26"
-git2 = { version = "0.17.2", default-features = false }
+chrono = "0.4.30"
+git2 = { version = "0.18.0", default-features = false }
