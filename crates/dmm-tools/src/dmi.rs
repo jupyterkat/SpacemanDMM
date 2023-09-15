@@ -150,16 +150,15 @@ pub fn composite(
     pos_to: Coordinate,
     crop_from: Rect,
     tint_color: [u8; 4],
-) {
+) -> Result<()> {
     if crop_from.x + crop_from.width > from.width()
         || crop_from.y + crop_from.height > from.height()
     {
-        tracing::error!(
+        return Err(eyre::eyre!(
             "Cannot get subview, out of bounds! {crop_from:?}, (img_width, img_height) {}:{}",
             from.width(),
             from.height()
-        );
-        return;
+        ));
     }
     let image_view = from.view(crop_from.x, crop_from.y, crop_from.width, crop_from.height);
 
@@ -201,6 +200,7 @@ pub fn composite(
     fn mul255(x: u8, y: u8) -> u8 {
         (x as u32 * y as u32 / 255) as u8
     }
+    Ok(())
 }
 
 #[test]
@@ -223,7 +223,8 @@ fn composite_test() {
             height: 2,
         },
         NO_TINT,
-    );
+    )
+    .unwrap();
 
     let map_vec = map.view(0, 0, 2, 2).pixels().collect::<Vec<_>>();
     let image_vec = image.view(0, 0, 2, 2).pixels().collect::<Vec<_>>();

@@ -173,13 +173,24 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
             if let Some((corrected_loc, corrected_rect)) =
                 clip((map_image.width(), map_image.height()), loc, rect)
             {
-                composite(
+                use eyre::Context;
+                if let Some(error) = composite(
                     &icon_file.image,
                     &mut map_image,
                     corrected_loc,
                     corrected_rect,
                     sprite.color,
                 )
+                .wrap_err_with(|| {
+                    format!(
+                        "icon_file: {}, icon_state: {}",
+                        sprite.icon, sprite.icon_state
+                    )
+                })
+                .err()
+                {
+                    tracing::error!("{error}")
+                }
             }
         } else {
             let key = format!(

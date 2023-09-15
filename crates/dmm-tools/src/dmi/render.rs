@@ -175,7 +175,7 @@ impl<'a> IconRenderer<'a> {
                 .get_index_of_frame(icon_index, *dir, frame)
                 .unwrap();
             let frame_rect = self.source.rect_of_index(frame_idx);
-            composite(
+            _ = composite(
                 &self.source.image,
                 canvas,
                 (self.source.metadata.header.width * (dir_no as u32), 0),
