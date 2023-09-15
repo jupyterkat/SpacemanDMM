@@ -189,7 +189,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage
                 })
                 .err()
                 {
-                    tracing::error!("{error}")
+                    tracing::error!("{error:#?}")
                 }
             }
         } else {
