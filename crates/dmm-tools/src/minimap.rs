@@ -508,7 +508,6 @@ impl From<i16> for Layer {
 
 impl From<i32> for Layer {
     fn from(whole: i32) -> Layer {
-        use std::convert::TryFrom;
         Layer {
             whole: i16::try_from(whole).expect("layer out of range"),
             frac: 0,
