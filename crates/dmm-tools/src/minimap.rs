@@ -200,7 +200,7 @@ use super::dmi;
 
 // OOB handling
 fn clip(
-    (width, height): (u32, u32),
+    (img_width, img_height): (u32, u32),
     (mut loc_x, mut loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
@@ -209,7 +209,7 @@ fn clip(
         loc_x = 0;
     }
 
-    while loc_x as u32 + rect.width > width {
+    while loc_x as u32 + rect.width > img_width {
         rect.width = rect.width.checked_sub(1)?;
     }
 
@@ -218,7 +218,7 @@ fn clip(
         loc_y = 0;
     }
 
-    while loc_y as u32 + rect.height > height {
+    while loc_y as u32 + rect.height > img_height {
         rect.height = rect.height.checked_sub(1)?;
     }
 

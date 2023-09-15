@@ -83,8 +83,8 @@ impl IconFile {
     pub fn get_icon(&self, index: IconLocation) -> image::SubImage<&image::RgbaImage> {
         let icon_count = self.image.width() / self.metadata.header.width;
         let (icon_x, icon_y) = (
-            index.into_inner() as u32 % icon_count,
-            index.into_inner() as u32 / icon_count,
+            (index.into_inner() - 1) as u32 % icon_count,
+            (index.into_inner() - 1) as u32 / icon_count,
         );
 
         self.image.view(
@@ -107,10 +107,7 @@ impl IconFile {
         let icon_index = self.metadata.get_index_of_frame(icon_state, dir, 0)?;
 
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = (
-            icon_index as u32 % icon_count,
-            icon_index as u32 / icon_count,
-        );
+        let (icon_x, icon_y) = ((icon_index - 1) % icon_count, (icon_index - 1) / icon_count);
         Some(Rect {
             x: icon_x * self.metadata.header.width,
             y: icon_y * self.metadata.header.height,
@@ -121,7 +118,7 @@ impl IconFile {
 
     pub fn rect_of_index(&self, icon_index: u32) -> Rect {
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
+        let (icon_x, icon_y) = ((icon_index - 1) % icon_count, (icon_index - 1) / icon_count);
         Rect {
             x: icon_x * self.metadata.header.width,
             y: icon_y * self.metadata.header.height,
@@ -169,17 +166,16 @@ pub fn composite(
     for (x, y, from_pix) in image_view.pixels() {
         let mut tinted_from = from_pix;
 
-        let Some(to_pix) = to
-            .get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
-                tracing::error!(
-                    "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
-                    x + pos_to.0,
-                    y + pos_to.1,
-                    to.width(),
-                    to.height()
-                );
-                continue
-            };
+        let Some(to_pix) = to.get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
+            tracing::error!(
+                "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
+                x + pos_to.0,
+                y + pos_to.1,
+                to.width(),
+                to.height()
+            );
+            continue;
+        };
 
         tinted_from
             .0
