@@ -83,8 +83,8 @@ impl IconFile {
     pub fn get_icon(&self, index: IconLocation) -> image::SubImage<&image::RgbaImage> {
         let icon_count = self.image.width() / self.metadata.header.width;
         let (icon_x, icon_y) = (
-            (index.into_inner() - 1) as u32 % icon_count,
-            (index.into_inner() - 1) as u32 / icon_count,
+            (index.into_inner().saturating_sub(1)) as u32 % icon_count,
+            (index.into_inner().saturating_sub(1)) as u32 / icon_count,
         );
 
         self.image.view(
@@ -107,7 +107,10 @@ impl IconFile {
         let icon_index = self.metadata.get_index_of_frame(icon_state, dir, 0)?;
 
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = ((icon_index - 1) % icon_count, (icon_index - 1) / icon_count);
+        let (icon_x, icon_y) = (
+            (icon_index.saturating_sub(1)) % icon_count,
+            (icon_index.saturating_sub(1)) / icon_count,
+        );
         Some(Rect {
             x: icon_x * self.metadata.header.width,
             y: icon_y * self.metadata.header.height,
@@ -118,7 +121,10 @@ impl IconFile {
 
     pub fn rect_of_index(&self, icon_index: u32) -> Rect {
         let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = ((icon_index - 1) % icon_count, (icon_index - 1) / icon_count);
+        let (icon_x, icon_y) = (
+            (icon_index.saturating_sub(1)) % icon_count,
+            (icon_index.saturating_sub(1)) / icon_count,
+        );
         Rect {
             x: icon_x * self.metadata.header.width,
             y: icon_y * self.metadata.header.height,
