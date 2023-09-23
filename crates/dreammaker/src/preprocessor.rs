@@ -816,7 +816,7 @@ impl<'ctx> Preprocessor<'ctx> {
                         expect_token!(() = Token::Punct(Punctuation::Newline));
                         let path = PathBuf::from(path_str.replace('\\', "/"));
 
-                        for candidate in vec![
+                        for candidate in [
                             // 1. relative to file in which `#include` appears.
                             self.include_stack
                                 .top_file_path()

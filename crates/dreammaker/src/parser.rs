@@ -57,7 +57,7 @@ pub fn parse<I>(context: &Context, iter: I) -> ObjectTree
 where
     I: IntoIterator<Item = LocatedToken>,
 {
-    Parser::new(context, iter.into_iter()).parse_object_tree()
+    Parser::new(context, iter).parse_object_tree()
 }
 
 /// Parse a token stream into an expression.
@@ -72,7 +72,7 @@ pub fn parse_expression<I>(
 where
     I: IntoIterator<Item = LocatedToken>,
 {
-    let mut parser = Parser::new(context, iter.into_iter());
+    let mut parser = Parser::new(context, iter);
     parser.location = location;
     Ok(require!(parser.expression()))
 }

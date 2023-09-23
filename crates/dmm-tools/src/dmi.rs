@@ -68,6 +68,7 @@ impl IconFile {
 
         let meta_text = chunk.get_text()?;
 
+        //does not need to be buffered, we're reading from memory by this point
         let imagebuf =
             image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
                 .decode()?;
@@ -88,8 +89,8 @@ impl IconFile {
         );
 
         self.image.view(
-            icon_x as u32,
-            icon_y as u32,
+            icon_x,
+            icon_y,
             self.metadata.header.width,
             self.metadata.header.height,
         )
