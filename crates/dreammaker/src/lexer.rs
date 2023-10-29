@@ -1,12 +1,12 @@
 //! The lexer/tokenizer.
+use std::borrow::Cow;
+use std::fmt;
 use std::io::Read;
 use std::str::FromStr;
-use std::fmt;
-use std::borrow::Cow;
 
-use super::{DMError, Location, HasLocation, FileId, Context, Severity};
-use super::docs::*;
 use super::ast::Ident;
+use super::docs::*;
+use super::{Context, DMError, FileId, HasLocation, Location, Severity};
 
 macro_rules! table {
     (
@@ -148,23 +148,134 @@ impl fmt::Display for Punctuation {
 /// character in the input, blazing fast. The code to generate it is contained
 /// in the following test.
 static SPEEDY_TABLE: [(usize, usize); 127] = [
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 1), (1, 2), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (2, 3), (3, 5), (5, 6), (6, 8), (0, 0), (8, 12), (12, 16), (16, 17),
-    (17, 18), (18, 19), (19, 22), (22, 25), (25, 26), (26, 29), (29, 32), (32, 36),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (36, 39), (39, 40), (40, 45), (45, 47), (47, 51), (51, 55),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (55, 56), (0, 0), (56, 57), (57,59), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
-    (0, 0), (0, 0), (0, 0), (59, 61), (61, 65), (65, 66), (66, 69),
-    ];
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 1),
+    (1, 2),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (2, 3),
+    (3, 5),
+    (5, 6),
+    (6, 8),
+    (0, 0),
+    (8, 12),
+    (12, 16),
+    (16, 17),
+    (17, 18),
+    (18, 19),
+    (19, 22),
+    (22, 25),
+    (25, 26),
+    (26, 29),
+    (29, 32),
+    (32, 36),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (36, 39),
+    (39, 40),
+    (40, 45),
+    (45, 47),
+    (47, 51),
+    (51, 55),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (55, 56),
+    (0, 0),
+    (56, 57),
+    (57, 59),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (59, 61),
+    (61, 65),
+    (65, 66),
+    (66, 69),
+];
 
 #[test]
 fn make_speedy_table() {
@@ -189,7 +300,12 @@ fn make_speedy_table() {
         }
 
         if let Some(prev) = prev {
-            assert!(each > prev, "out-of-order: {:?} is not greater than {:?}", each, prev);
+            assert!(
+                each > prev,
+                "out-of-order: {:?} is not greater than {:?}",
+                each,
+                prev
+            );
         }
         prev = Some(each);
 
@@ -223,7 +339,10 @@ fn filter_punct_table(filter: u8) -> &'static [(&'static str, Punctuation)] {
 }
 
 #[inline]
-fn filter_punct<'a>(input: &'a [(&'static str, Punctuation)], filter: &[u8]) -> &'a [(&'static str, Punctuation)] {
+fn filter_punct<'a>(
+    input: &'a [(&'static str, Punctuation)],
+    filter: &[u8],
+) -> &'a [(&'static str, Punctuation)] {
     // requires that PUNCT_TABLE be ordered, shorter entries be first,
     // and all entries with >1 character also have their prefix in the table
     let mut start = 0;
@@ -277,66 +396,37 @@ impl Token {
                 _ => continue,
             };
             match p {
-                In |
-                Eq |
-                NotEq |
-                Mod |
-                FloatMod |
-                And |
-                BitAndAssign |
-                AndAssign |
-                Mul |
-                Pow |
-                MulAssign |
-                Add |
-                AddAssign |
-                Sub |
-                SubAssign |
-                DivAssign |
-                Colon |
-                AssignInto |
-                Less |
-                LShift |
-                LShiftAssign |
-                LessEq |
-                LessGreater |
-                Assign |
-                Greater |
-                GreaterEq |
-                RShift |
-                RShiftAssign |
-                QuestionMark |
-                BitXorAssign |
-                BitOrAssign |
-                OrAssign |
-                Or => return true,
+                In | Eq | NotEq | Mod | FloatMod | And | BitAndAssign | AndAssign | Mul | Pow
+                | MulAssign | Add | AddAssign | Sub | SubAssign | DivAssign | Colon
+                | AssignInto | Less | LShift | LShiftAssign | LessEq | LessGreater | Assign
+                | Greater | GreaterEq | RShift | RShiftAssign | QuestionMark | BitXorAssign
+                | BitOrAssign | OrAssign | Or => return true,
                 _ => {}
             }
         }
 
         // space
         match (prev, self) {
-            (&Token::Ident(_, true), _) |
-            (&Token::Punct(Comma), _) => true,
-            (&Token::Ident(..), &Token::Punct(_)) |
-            (&Token::Ident(..), &Token::InterpStringEnd(_)) |
-            (&Token::Ident(..), &Token::InterpStringPart(_)) |
-            (&Token::Punct(_), &Token::Ident(..)) |
-            (&Token::InterpStringBegin(_), &Token::Ident(..)) |
-            (&Token::InterpStringPart(_), &Token::Ident(..)) => false,
-            (&Token::Ident(..), _) |
-            (_, &Token::Ident(..)) => true,
+            (&Token::Ident(_, true), _) | (&Token::Punct(Comma), _) => true,
+            (&Token::Ident(..), &Token::Punct(_))
+            | (&Token::Ident(..), &Token::InterpStringEnd(_))
+            | (&Token::Ident(..), &Token::InterpStringPart(_))
+            | (&Token::Punct(_), &Token::Ident(..))
+            | (&Token::InterpStringBegin(_), &Token::Ident(..))
+            | (&Token::InterpStringPart(_), &Token::Ident(..)) => false,
+            (&Token::Ident(..), _) | (_, &Token::Ident(..)) => true,
             _ => false,
         }
     }
 
     /// Check whether this token is whitespace.
     pub fn is_whitespace(&self) -> bool {
-        matches!(*self,
+        matches!(
+            *self,
             Token::Punct(Punctuation::Tab)
-            | Token::Punct(Punctuation::Newline)
-            | Token::Punct(Punctuation::Space)
-            | Token::Eof
+                | Token::Punct(Punctuation::Newline)
+                | Token::Punct(Punctuation::Space)
+                | Token::Eof
         )
     }
 
@@ -412,7 +502,9 @@ impl fmt::Display for FormatFloat {
             if exp >= 6.0 || exp <= -5.0 {
                 let n2 = (n * factor).round() * 1.0e-5;
                 let mut precision = 0;
-                while precision < 5 && (n2 * 10.0f32.powi(precision)) != (n2 * 10.0f32.powi(precision)).round() {
+                while precision < 5
+                    && (n2 * 10.0f32.powi(precision)) != (n2 * 10.0f32.powi(precision)).round()
+                {
                     precision += 1;
                 }
                 write!(f, "{:.*}e{:+04}", precision as usize, n2, exp)
@@ -511,7 +603,17 @@ pub fn buffer_file(file: FileId, path: &std::path::Path) -> Result<Vec<u8>, DMEr
 
     let mut read = match std::fs::File::open(path) {
         Ok(read) => read,
-        Err(error) => return Err(DMError::new(Location { file, line: 1, column: 1 }, "i/o error opening file").with_cause(error)),
+        Err(error) => {
+            return Err(DMError::new(
+                Location {
+                    file,
+                    line: 1,
+                    column: 1,
+                },
+                "i/o error opening file",
+            )
+            .with_cause(error))
+        }
     };
 
     if let Err(error) = read.read_to_end(&mut buffer) {
@@ -543,7 +645,10 @@ impl<'a> LocationTracker<'a> {
         if input.starts_with(BOM) {
             match input {
                 Cow::Borrowed(b) => Cow::Borrowed(&b[BOM.len()..]),
-                Cow::Owned(mut o) => { o.drain(..BOM.len()); Cow::Owned(o) }
+                Cow::Owned(mut o) => {
+                    o.drain(..BOM.len());
+                    Cow::Owned(o)
+                }
             }
         } else {
             input
@@ -672,13 +777,21 @@ impl<'ctx> Lexer<'ctx> {
     }
 
     /// Create a new lexer from a byte stream.
-    pub fn new<I: Into<Cow<'ctx, [u8]>>>(context: &'ctx Context, file_number: FileId, input: I) -> Self {
+    pub fn new<I: Into<Cow<'ctx, [u8]>>>(
+        context: &'ctx Context,
+        file_number: FileId,
+        input: I,
+    ) -> Self {
         let inner = LocationTracker::skip_utf8_bom(input.into());
         Lexer::from_input(context, LocationTracker::new(file_number, inner))
     }
 
     /// Create a new lexer from a reader.
-    pub fn from_read<R: Read>(context: &'ctx Context, file: FileId, read: R) -> Result<Self, DMError> {
+    pub fn from_read<R: Read>(
+        context: &'ctx Context,
+        file: FileId,
+        read: R,
+    ) -> Result<Self, DMError> {
         let start_time = std::time::Instant::now();
         let input = buffer_read(file, read)?;
         context.add_io_time(start_time.elapsed());
@@ -686,7 +799,11 @@ impl<'ctx> Lexer<'ctx> {
     }
 
     /// Create a new lexer from a reader.
-    pub fn from_file(context: &'ctx Context, file: FileId, path: &std::path::Path) -> Result<Self, DMError> {
+    pub fn from_file(
+        context: &'ctx Context,
+        file: FileId,
+        path: &std::path::Path,
+    ) -> Result<Self, DMError> {
         let start_time = std::time::Instant::now();
         let input = buffer_file(file, path)?;
         context.add_io_time(start_time.elapsed());
@@ -736,12 +853,20 @@ impl<'ctx> Lexer<'ctx> {
             // '*' must be tracked to accurately end the block comment, and
             // will be stripped by the documentation parser.
             Some(b'*') => {
-                comment = Some(DocComment::new(CommentKind::Block, DocTarget::FollowingItem));
+                comment = Some(DocComment::new(
+                    CommentKind::Block,
+                    DocTarget::FollowingItem,
+                ));
                 buffer[1] = b'*';
             }
             // '!' will not be skipped by the documentation parser, and is not
             // important to checking when the block comment has ended.
-            Some(b'!') => comment = Some(DocComment::new(CommentKind::Block, DocTarget::EnclosingItem)),
+            Some(b'!') => {
+                comment = Some(DocComment::new(
+                    CommentKind::Block,
+                    DocTarget::EnclosingItem,
+                ))
+            }
             Some(other) => buffer[1] = other,
             None => {}
         }
@@ -752,7 +877,8 @@ impl<'ctx> Lexer<'ctx> {
             match self.next() {
                 Some(val) => buffer[1] = val,
                 None => {
-                    self.context.register_error(self.error("still skipping comments at end of file"));
+                    self.context
+                        .register_error(self.error("still skipping comments at end of file"));
                     break;
                 }
             }
@@ -773,7 +899,9 @@ impl<'ctx> Lexer<'ctx> {
             }
         }
 
-        comment.filter(|c| !c.text.is_empty()).map(Token::DocComment)
+        comment
+            .filter(|c| !c.text.is_empty())
+            .map(Token::DocComment)
     }
 
     fn skip_line_comment(&mut self) -> Option<Token> {
@@ -782,8 +910,12 @@ impl<'ctx> Lexer<'ctx> {
         // read the first character and check for being a comment
         let mut comment = None;
         match self.next() {
-            Some(b'/') => comment = Some(DocComment::new(CommentKind::Line, DocTarget::FollowingItem)),
-            Some(b'!') => comment = Some(DocComment::new(CommentKind::Line, DocTarget::EnclosingItem)),
+            Some(b'/') => {
+                comment = Some(DocComment::new(CommentKind::Line, DocTarget::FollowingItem))
+            }
+            Some(b'!') => {
+                comment = Some(DocComment::new(CommentKind::Line, DocTarget::EnclosingItem))
+            }
             Some(b'\n') => {
                 self.put_back(Some(b'\n'));
                 return None;
@@ -803,9 +935,11 @@ impl<'ctx> Lexer<'ctx> {
                 // not listening
             } else if backslash {
                 if ch == b'\n' {
-                    self.error("backslash in line comment may be commenting out the following line")
-                        .set_severity(Severity::Warning)
-                        .register(self.context);
+                    self.error(
+                        "backslash in line comment may be commenting out the following line",
+                    )
+                    .set_severity(Severity::Warning)
+                    .register(self.context);
                 }
                 backslash = false;
             } else if ch == b'\n' {
@@ -829,7 +963,7 @@ impl<'ctx> Lexer<'ctx> {
         if first == b'.' {
             integer = false;
         } else if first == b'0' {
-            radix = 8;  // hate. let me tell you...
+            radix = 8; // hate. let me tell you...
             match self.next() {
                 Some(b'x') => radix = 16,
                 ch => self.put_back(ch),
@@ -837,7 +971,7 @@ impl<'ctx> Lexer<'ctx> {
         }
         loop {
             match self.next() {
-                Some(b'_') => {},
+                Some(b'_') => {}
                 Some(ch) if ch == b'.' || ch == b'e' || ch == b'E' => {
                     // E is used for scientific notation
                     // UNLESS we're parsing a hexadecimal literal
@@ -851,7 +985,7 @@ impl<'ctx> Lexer<'ctx> {
                     buf.push(ch as char);
                 }
                 Some(b'#') => {
-                    buf.push('#');  // Keep pushing to `buf` in case of error.
+                    buf.push('#'); // Keep pushing to `buf` in case of error.
                     let start = buf.len();
                     for _ in 0..3 {
                         if let Some(ch) = self.next() {
@@ -898,25 +1032,30 @@ impl<'ctx> Lexer<'ctx> {
                 if let Ok(val) = f32::from_str(&buf) {
                     let val_str = val.to_string();
                     if val_str != buf {
-                        self.error(format!("precision loss of integer constant: \"{}\" to {}", buf, val))
-                            .set_severity(Severity::Warning)
-                            .with_errortype("integer_precision_loss")
-                            .register(self.context);
+                        self.error(format!(
+                            "precision loss of integer constant: \"{}\" to {}",
+                            buf, val
+                        ))
+                        .set_severity(Severity::Warning)
+                        .with_errortype("integer_precision_loss")
+                        .register(self.context);
                     }
-                    return Token::Float(val)
+                    return Token::Float(val);
                 }
             }
-            self.context.register_error(self.error(
-                format!("bad base-{} integer \"{}\": {}", radix, buf, original_error)));
-            Token::Int(0)  // fallback
+            self.context.register_error(self.error(format!(
+                "bad base-{} integer \"{}\": {}",
+                radix, buf, original_error
+            )));
+            Token::Int(0) // fallback
         } else {
             // ignore radix
             match f32::from_str(&buf) {
                 Ok(val) => Token::Float(val),
                 Err(e) => {
-                    self.context.register_error(self.error(
-                        format!("bad float \"{}\": {}", buf, e)));
-                    Token::Float(0.0)  // fallback
+                    self.context
+                        .register_error(self.error(format!("bad float \"{}\": {}", buf, e)));
+                    Token::Float(0.0) // fallback
                 }
             }
         }
@@ -947,12 +1086,13 @@ impl<'ctx> Lexer<'ctx> {
                 Some(ch) if backslash => {
                     backslash = false;
                     buf.push(ch);
-                },
+                }
                 Some(b'\\') => backslash = true,
                 Some(b'\'') => break,
                 Some(ch) => buf.push(ch),
                 None => {
-                    self.context.register_error(DMError::new(start_loc, "unterminated resource literal"));
+                    self.context
+                        .register_error(DMError::new(start_loc, "unterminated resource literal"));
                     break;
                 }
             }
@@ -971,7 +1111,8 @@ impl<'ctx> Lexer<'ctx> {
             let ch = match self.next() {
                 Some(ch) => ch,
                 None => {
-                    self.context.register_error(DMError::new(start_loc, "unterminated string literal"));
+                    self.context
+                        .register_error(DMError::new(start_loc, "unterminated string literal"));
                     break;
                 }
             };
@@ -995,7 +1136,7 @@ impl<'ctx> Lexer<'ctx> {
                     backslash = false;
                     let next = self.skip_ws(true);
                     self.put_back(next);
-                },
+                }
                 /*b'"' | b'\'' | b'\\' | b'[' | b']' if backslash => {
                     backslash = false;
                     buf.push(ch);
@@ -1036,8 +1177,7 @@ impl<'ctx> Lexer<'ctx> {
             match self.next() {
                 Some(ch) => buf.push(ch),
                 None => {
-                    DMError::new(start_loc, "unterminated raw string")
-                        .register(self.context);
+                    DMError::new(start_loc, "unterminated raw string").register(self.context);
                     break;
                 }
             }
@@ -1054,11 +1194,10 @@ impl<'ctx> Lexer<'ctx> {
         // We just got the '@'. Let's see what the next character is.
         match self.next() {
             // @<LF> - error
-            Some(b'\n') |
-            None => {
+            Some(b'\n') | None => {
                 self.error("unterminated raw string").register(self.context);
                 Token::String(String::new())
-            },
+            }
             // @(<terminator string>)<string><terminator string> - no LF in contents
             Some(b'(') => {
                 // build terminator until ), then read until that terminator
@@ -1068,17 +1207,19 @@ impl<'ctx> Lexer<'ctx> {
                         Some(b')') => break,
                         Some(ch) => terminator.push(ch),
                         None => {
-                            self.error("unterminated raw string terminator").register(self.context);
-                            return Token::String(String::new())
+                            self.error("unterminated raw string terminator")
+                                .register(self.context);
+                            return Token::String(String::new());
                         }
                     }
                 }
                 if terminator.is_empty() {
-                    self.error("empty raw string terminator").register(self.context);
-                    return Token::String(String::new())
+                    self.error("empty raw string terminator")
+                        .register(self.context);
+                    return Token::String(String::new());
                 }
                 self.read_raw_string_inner(&terminator)
-            },
+            }
             Some(b'{') => match self.next() {
                 // @{"<string>"} - LF allowed in contents
                 Some(b'"') => self.read_raw_string_inner(b"\"}"),
@@ -1094,7 +1235,7 @@ impl<'ctx> Lexer<'ctx> {
     }
 
     fn read_punct(&mut self, first: u8) -> Option<Punctuation> {
-        let mut needle = [first, 0, 0, 0, 0, 0, 0, 0];  // poor man's StackVec
+        let mut needle = [first, 0, 0, 0, 0, 0, 0, 0]; // poor man's StackVec
         let mut needle_idx = 1;
 
         let mut items = filter_punct_table(first);
@@ -1111,8 +1252,8 @@ impl<'ctx> Lexer<'ctx> {
                 Some(b) => {
                     needle[needle_idx] = b;
                     needle_idx += 1;
-                },
-                None => return candidate,  // EOF
+                }
+                None => return candidate, // EOF
             }
             items = filter_punct(items, &needle[..needle_idx]);
         }
@@ -1127,10 +1268,7 @@ impl<'ctx> Lexer<'ctx> {
         if punct != close {
             let next = self.next();
             match next {
-                Some(b'\r') |
-                Some(b' ') |
-                Some(b'\t') |
-                Some(b'\n') => {}
+                Some(b'\r') | Some(b' ') | Some(b'\t') | Some(b'\n') => {}
                 _ => punct = close,
             }
             self.put_back(next);
@@ -1142,11 +1280,15 @@ impl<'ctx> Lexer<'ctx> {
         let mut skip_newlines = if skip_newlines { 2 } else { 0 };
         loop {
             match self.next() {
-                Some(b'\r') => {},
-                Some(b' ') |
-                Some(b'\t') if !self.at_line_head || skip_newlines > 0 => { self.close_allowed = false; },
-                Some(b'\n') if skip_newlines == 2 => { skip_newlines = 1; self.close_allowed = true; },
-                ch => return ch
+                Some(b'\r') => {}
+                Some(b' ') | Some(b'\t') if !self.at_line_head || skip_newlines > 0 => {
+                    self.close_allowed = false;
+                }
+                Some(b'\n') if skip_newlines == 2 => {
+                    skip_newlines = 1;
+                    self.close_allowed = true;
+                }
+                ch => return ch,
             }
         }
     }
@@ -1156,8 +1298,8 @@ impl<'ctx> Iterator for Lexer<'ctx> {
     type Item = LocatedToken;
 
     fn next(&mut self) -> Option<LocatedToken> {
-        use self::Token::*;
         use self::Punctuation::*;
+        use self::Token::*;
         let mut skip_newlines = false;
         let mut found_illegal = false;
         loop {

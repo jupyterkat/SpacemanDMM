@@ -1,5 +1,5 @@
-use dap_types::*;
 use super::*;
+use dap_types::*;
 
 const EXTOOLS_HELP: &str = "
 #dis, #disassemble: show disassembly for current stack frame";
@@ -20,7 +20,9 @@ impl Debugger {
                 }
 
                 let Some(frame_id) = params.frameId else {
-                    return Err(Box::new(GenericError("Must select a stack frame to evaluate in")));
+                    return Err(Box::new(GenericError(
+                        "Must select a stack frame to evaluate in",
+                    )));
                 };
 
                 let (thread, frame_no) = extools.get_thread_by_frame_id(frame_id)?;
@@ -40,11 +42,8 @@ impl Debugger {
             }
 
             DebugClient::Auxtools(auxtools) => {
-                let response = auxtools.eval(
-                    params.frameId.map(|x| x as u32),
-                    input,
-                    params.context,
-                )?;
+                let response =
+                    auxtools.eval(params.frameId.map(|x| x as u32), input, params.context)?;
 
                 return Ok(EvaluateResponse {
                     result: response.value,
