@@ -1493,8 +1493,8 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                             return spanned(require!(self.for_range(
                                 Some(vs.var_type),
                                 vs.name,
-                                Box::new(value),
-                                Box::new(rhs)
+                                value,
+                                rhs
                             )));
                         }
                     },
@@ -1510,12 +1510,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                         };
                         require!(self.exact_ident("to"));
                         let to_rhs = require!(self.expression());
-                        return spanned(require!(self.for_range(
-                            None,
-                            name,
-                            rhs,
-                            Box::new(to_rhs)
-                        )));
+                        return spanned(require!(self.for_range(None, name, *rhs, to_rhs)));
                     }
                     Statement::Expr(Expression::BinaryOp {
                         op: BinaryOp::In,
@@ -1537,7 +1532,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                                 lhs,
                                 rhs,
                             } => {
-                                return spanned(require!(self.for_range(None, name, lhs, rhs)));
+                                return spanned(require!(self.for_range(None, name, *lhs, *rhs)));
                             }
                             rhs => {
                                 // I love code duplication, don't you?
@@ -1570,12 +1565,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                     let value = require!(self.expression());
                     if let Some(()) = self.exact_ident("to")? {
                         let rhs = require!(self.expression());
-                        return spanned(require!(self.for_range(
-                            var_type,
-                            name,
-                            Box::new(value),
-                            Box::new(rhs)
-                        )));
+                        return spanned(require!(self.for_range(var_type, name, value, rhs)));
                     }
                     Some(value)
                 } else {
@@ -1856,13 +1846,12 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
     // for(var/a = 1 to 20
     // for(var/a in 1 to 20
     // This... isn't a boxed local, it's method arguments. Clippy??
-    #[allow(clippy::boxed_local)]
     fn for_range(
         &mut self,
         var_type: Option<VarType>,
         name: Ident,
-        start: Box<Expression>,
-        end: Box<Expression>,
+        start: Expression,
+        end: Expression,
     ) -> Status<Statement> {
         // step 2
         let step = if let Some(()) = self.exact_ident("step")? {
@@ -1876,8 +1865,8 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
         success(Statement::ForRange(Box::new(ForRangeStatement {
             var_type,
             name: name.into(),
-            start: *start,
-            end: *end,
+            start: start,
+            end: end,
             step,
             block: require!(self.block(&LoopContext::ForRange)),
         })))

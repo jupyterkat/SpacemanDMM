@@ -33,8 +33,7 @@ pub struct Context<'a> {
 }
 
 // This should eventually be faliable and not just shrug it's shoulders at errors and log them.
-#[allow(clippy::result_unit_err)]
-pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage, ()> {
+pub fn generate(ctx: Context, icon_cache: &IconCache) -> eyre::Result<image::RgbaImage> {
     let Context {
         objtree,
         map,
