@@ -2848,19 +2848,16 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 );
             }
         }
-        let typeerror;
-        match rhs.static_ty {
+        let typeerror = match rhs.static_ty {
             StaticType::None => return Analysis::empty(),
             StaticType::Type(typeref) => {
                 // Its been overloaded, assume they really know they want to do this
                 if let Some(proc) = typeref.get_proc(operator) {
                     return self.visit_call(location, typeref, proc, &[], true, local_vars);
                 }
-                typeerror = typeref.get().pretty_path();
+                typeref.get().pretty_path()
             }
-            StaticType::List { list, .. } => {
-                typeerror = "list";
-            }
+            StaticType::List { list, .. } => "list",
         };
         error(
             location,
