@@ -1,4 +1,4 @@
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 use dm::lexer::{FormatFloat, Quote};
 

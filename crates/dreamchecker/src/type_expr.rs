@@ -1,5 +1,6 @@
 //! Support for "type expressions", used in evaluating dynamic/generic return
 //! types.
+use dreammaker as dm;
 
 use std::collections::HashMap;
 

@@ -1,13 +1,10 @@
-extern crate dmm_tools;
-extern crate dreammaker as dm;
-extern crate ndarray;
-extern crate walkdir;
-
+use ahash::HashMap;
 use dmm_tools::dmi::*;
-use ndarray::s;
-use std::collections::HashMap;
+use image::GenericImageView;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
+
+use tinydmi::prelude::{IconLocation, State};
 
 fn is_visible(entry: &DirEntry) -> bool {
     entry
@@ -36,26 +33,22 @@ fn files_with_extension<F: FnMut(&Path)>(ext: &str, mut f: F) {
     }
 }
 
-fn all_same(icon_file: &IconFile, states: &[&State]) -> bool {
-    let (first, rest) = states.split_first().unwrap();
-    let first_start_index = first.offset as u32;
-    for state in rest {
-        if state.dirs != first.dirs || state.frames != first.frames {
+fn all_same(icon_file: &IconFile, states: &[(IconLocation, &State)]) -> bool {
+    let ((first_index, first_state), rest) = states.split_first().unwrap();
+    for (state_index, state) in rest {
+        if state.dirs != first_state.dirs || state.frames != first_state.frames {
             return false;
         }
-        let start_index = state.offset as u32;
-        for i in 0..state.num_sprites() as u32 {
-            let rect1 = icon_file.rect_of_index(first_start_index + i);
-            let rect2 = icon_file.rect_of_index(start_index + i);
-            let slice1 = icon_file.image.data.slice(s![
-                rect1.1 as isize..(rect1.1 + rect1.3) as isize,
-                rect1.0 as isize..(rect1.0 + rect1.2) as isize
-            ]);
-            let slice2 = icon_file.image.data.slice(s![
-                rect2.1 as isize..(rect2.1 + rect2.3) as isize,
-                rect2.0 as isize..(rect2.0 + rect2.2) as isize
-            ]);
-            if slice1 != slice2 {
+        for i in 0..state.num_sprites() {
+            let rect1 = icon_file.get_icon((first_index.into_inner() + i).into());
+            let rect2 = icon_file.get_icon((state_index.into_inner() + i).into());
+
+            if rect1
+                .pixels()
+                .zip(rect2.pixels())
+                .find(|((_, _, bit1), (_, _, bit2))| bit1 != bit2)
+                .is_some()
+            {
                 return false;
             }
         }
@@ -66,14 +59,25 @@ fn all_same(icon_file: &IconFile, states: &[&State]) -> bool {
 pub fn main() {
     files_with_extension("dmi", |path| {
         let icon_file = IconFile::from_file(path).unwrap();
-        let mut counts = HashMap::<_, Vec<_>>::new();
-        for state in icon_file.metadata.states.iter() {
-            let mut name = format!("{:?}", state.name);
-            if state.movement {
-                name.push_str(" (movement)");
-            }
-            counts.entry(name).or_default().push(state);
-        }
+        let counts = icon_file
+            .metadata
+            .states
+            .iter()
+            .map(|(string, state_vec)| {
+                let (_, state_sample) = state_vec.get(0).unwrap();
+                let new_name = if state_sample.movement {
+                    format!("{string} (movement)")
+                } else {
+                    string.clone()
+                };
+                let states = state_vec
+                    .iter()
+                    .map(|(icon_index, state_index)| (*icon_index, state_index))
+                    .collect::<Vec<_>>();
+                (new_name, states)
+            })
+            .collect::<HashMap<_, _>>();
+
         let mut name = false;
         for (k, v) in counts {
             if v.len() > 1 {
@@ -81,7 +85,11 @@ pub fn main() {
                     println!("{}", path.display());
                     name = true;
                 }
-                let star = if all_same(&icon_file, &v) { "*" } else { " " };
+                let star = if all_same(&icon_file, v.as_slice()) {
+                    "*"
+                } else {
+                    " "
+                };
                 println!("  {} {}x {}", star, v.len(), k);
             }
         }

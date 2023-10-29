@@ -57,7 +57,7 @@ fn load(path: &Path) -> Option<IconFile> {
     match IconFile::from_file(path) {
         Ok(loaded) => Some(loaded),
         Err(err) => {
-            eprintln!("error loading icon: {}\n  {}", path.display(), err);
+            tracing::debug!("error loading icon: {}\n  {}", path.display(), err);
             None
         }
     }

@@ -1,7 +1,7 @@
 //! A very simple CLI binary which finds a `.dme` file in the current directory
 //! and prints all non-hint diagnostics from parsing the object tree and procs.
 
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 fn main() {
     let mut context = dm::Context::default();

@@ -1,6 +1,6 @@
 //! Print total number of `var` declarations and overrides in a project.
 
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 fn main() {
     let context = dm::Context::default();

@@ -1,6 +1,6 @@
 //! Two examples where SpacemanDMM helped check large refactors for errors.
 
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 fn main() {
     println!("---- parsing environment ----");

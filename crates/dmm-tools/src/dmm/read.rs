@@ -3,6 +3,8 @@ use std::cmp::max;
 use std::collections::BTreeMap;
 use std::mem::take;
 
+use dreammaker as dm;
+
 use ndarray::Array3;
 
 use dm::lexer::{from_utf8_or_latin1, LocationTracker};

@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use dm::ast::*;
 use dm::objtree::*;
 use dm::Location;
+use dreammaker as dm;
 
 use ahash::RandomState;
 

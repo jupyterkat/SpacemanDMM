@@ -1,14 +1,17 @@
 use std::collections::{BTreeMap, HashSet};
 use std::sync::RwLock;
 
+use dreammaker as dm;
 use ndarray::Axis;
+use tinydmi::parser::metadata::IconIndex;
 
-use crate::dmi::{self, Dir, Image};
+use crate::dmi::composite;
 use crate::dmm::{Map, Prefab, ZLevel};
 use crate::icon_cache::IconCache;
 use crate::render_passes::RenderPass;
 use dm::constants::Constant;
 use dm::objtree::*;
+use tinydmi::prelude::Dir;
 
 use ahash::RandomState;
 
@@ -26,18 +29,18 @@ pub struct Context<'a> {
     pub max: (usize, usize),
     pub render_passes: &'a [Box<dyn RenderPass>],
     pub errors: &'a RwLock<HashSet<String, RandomState>>,
-    pub bump: &'a bumpalo::Bump,
+    pub arena: &'a typed_arena::Arena<String>,
 }
 
 // This should eventually be faliable and not just shrug it's shoulders at errors and log them.
 #[allow(clippy::result_unit_err)]
-pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
+pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<image::RgbaImage, ()> {
     let Context {
         objtree,
         map,
         level,
         render_passes,
-        bump,
+        arena,
         ..
     } = ctx;
 
@@ -81,7 +84,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                 }
                 let mut sprite = Sprite::from_vars(objtree, atom);
                 for pass in render_passes {
-                    pass.adjust_sprite(atom, &mut sprite, objtree, bump);
+                    pass.adjust_sprite(atom, &mut sprite, objtree, arena);
                 }
                 if sprite.icon.is_empty() {
                     println!("no icon: {}", atom.type_.path);
@@ -90,7 +93,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                 let atom = Atom { sprite, ..*atom };
 
                 for pass in render_passes {
-                    pass.overlays(&atom, objtree, &mut underlays, &mut overlays, bump);
+                    pass.overlays(&atom, objtree, &mut underlays, &mut overlays, arena);
                 }
 
                 // smoothing time
@@ -126,7 +129,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                         objtree,
                         &neighborhood,
                         &mut underlays,
-                        bump,
+                        arena,
                     ) {
                         normal_appearance = false;
                     }
@@ -146,7 +149,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
     // sorts the atom list and renders them onto the output image
     sprites.sort_by_key(|(_, s)| (s.plane, s.layer));
 
-    let mut map_image = Image::new_rgba(len_x as u32 * TILE_SIZE, len_y as u32 * TILE_SIZE);
+    let mut map_image = image::RgbaImage::new(len_x as u32 * TILE_SIZE, len_y as u32 * TILE_SIZE);
     'sprite: for (loc, sprite) in sprites {
         for pass in render_passes.iter() {
             if !pass.sprite_filter(&sprite) {
@@ -159,16 +162,35 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
             None => continue,
         };
 
-        if let Some(rect) = icon_file.rect_of(&sprite.icon_state.into(), sprite.dir) {
+        if let Some(rect) = icon_file.rect_of(IconIndex::new(0, sprite.icon_state), sprite.dir) {
             let pixel_x = sprite.ofs_x;
-            let pixel_y = sprite.ofs_y + icon_file.metadata.height as i32;
+            let pixel_y = sprite.ofs_y + icon_file.metadata.header.height as i32;
             let loc = (
                 ((loc.0 - ctx.min.0 as u32) * TILE_SIZE) as i32 + pixel_x,
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
-            if let Some((loc, rect)) = clip((map_image.width, map_image.height), loc, rect) {
-                map_image.composite(&icon_file.image, loc, rect, sprite.color);
+            if let Some((corrected_loc, corrected_rect)) =
+                clip((map_image.width(), map_image.height()), loc, rect)
+            {
+                use eyre::Context;
+                if let Some(error) = composite(
+                    &icon_file.image,
+                    &mut map_image,
+                    corrected_loc,
+                    corrected_rect,
+                    sprite.color,
+                )
+                .wrap_err_with(|| {
+                    format!(
+                        "icon_file: {}, icon_state: {}",
+                        sprite.icon, sprite.icon_state
+                    )
+                })
+                .err()
+                {
+                    tracing::error!("{error:#?}")
+                }
             }
         } else {
             let key = format!(
@@ -176,7 +198,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
                 sprite.icon, sprite.icon_state
             );
             if !ctx.errors.read().unwrap().contains(&key) {
-                eprintln!("{}", key);
+                tracing::debug!("{}", key);
                 ctx.errors.write().unwrap().insert(key);
             }
         }
@@ -185,41 +207,34 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> Result<Image, ()> {
     Ok(map_image)
 }
 
+use super::dmi;
+
 // OOB handling
 fn clip(
-    bounds: dmi::Coordinate,
-    mut loc: (i32, i32),
+    (img_width, img_height): (u32, u32),
+    (mut loc_x, mut loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
-    if loc.0 < 0 {
-        rect.0 += (-loc.0) as u32;
-        match rect.2.checked_sub((-loc.0) as u32) {
-            Some(s) => rect.2 = s,
-            None => return None, // out of the viewport
-        }
-        loc.0 = 0;
+    if loc_x < 0 {
+        loc_x = 0;
     }
-    while loc.0 + rect.2 as i32 > bounds.0 as i32 {
-        rect.2 -= 1;
-        if rect.2 == 0 {
-            return None;
-        }
+
+    while loc_x as u32 + rect.width > img_width {
+        rect.width = rect.width.checked_sub(1)?;
     }
-    if loc.1 < 0 {
-        rect.1 += (-loc.1) as u32;
-        match rect.3.checked_sub((-loc.1) as u32) {
-            Some(s) => rect.3 = s,
-            None => return None, // out of the viewport
-        }
-        loc.1 = 0;
+
+    if loc_y < 0 {
+        loc_y = 0;
     }
-    while loc.1 + rect.3 as i32 > bounds.1 as i32 {
-        rect.3 -= 1;
-        if rect.3 == 0 {
-            return None;
-        }
+
+    while loc_y as u32 + rect.height > img_height {
+        rect.height = rect.height.checked_sub(1)?;
     }
-    Some(((loc.0 as u32, loc.1 as u32), rect))
+
+    if rect.height == 0 || rect.width == 0 {
+        return None;
+    }
+    Some(((loc_x as u32, loc_y as u32), rect))
 }
 
 fn get_atom_list<'a>(
@@ -493,7 +508,6 @@ impl From<i16> for Layer {
 
 impl From<i32> for Layer {
     fn from(whole: i32) -> Layer {
-        use std::convert::TryFrom;
         Layer {
             whole: i16::try_from(whole).expect("layer out of range"),
             frac: 0,
@@ -588,7 +602,7 @@ fn plane_of<'s, T: GetVar<'s> + ?Sized>(objtree: &'s ObjectTree, atom: &T) -> i3
     match atom.get_var("plane", objtree) {
         Constant::Float(i) => *i as i32,
         other => {
-            eprintln!("not a plane: {:?} on {:?}", other, atom.get_path());
+            tracing::debug!("not a plane: {:?} on {:?}", other, atom.get_path());
             0
         }
     }
@@ -598,7 +612,7 @@ pub(crate) fn layer_of<'s, T: GetVar<'s> + ?Sized>(objtree: &'s ObjectTree, atom
     match atom.get_var("layer", objtree) {
         &Constant::Float(f) => Layer::from(f),
         other => {
-            eprintln!("not a layer: {:?} on {:?}", other, atom.get_path());
+            tracing::debug!("not a layer: {:?} on {:?}", other, atom.get_path());
             Layer::from(2)
         }
     }

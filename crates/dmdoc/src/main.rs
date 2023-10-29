@@ -1,10 +1,6 @@
 //! A CLI tool to generate HTML documentation of DreamMaker codebases.
 #![forbid(unsafe_code)]
-extern crate dreammaker as dm;
-extern crate git2;
-extern crate pulldown_cmark;
-extern crate tera;
-extern crate walkdir;
+use dreammaker as dm;
 #[macro_use]
 extern crate serde_derive;
 

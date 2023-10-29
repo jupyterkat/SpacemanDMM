@@ -1,3 +1,5 @@
+use dreammaker as dm;
+
 use dm::Context;
 use std::borrow::Cow;
 

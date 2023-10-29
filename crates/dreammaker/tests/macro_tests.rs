@@ -1,4 +1,4 @@
-extern crate dreammaker as dm;
+use dreammaker as dm;
 
 use dm::lexer::Punctuation::*;
 use dm::lexer::Token::*;

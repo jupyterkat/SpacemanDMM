@@ -3,7 +3,6 @@
 use std::fmt;
 
 use get_size::GetSize;
-use get_size_derive::GetSize;
 
 /// A collection of documentation comments targeting the same item.
 #[derive(Default, Clone, Debug, PartialEq, GetSize)]
@@ -216,7 +215,7 @@ pub enum DocTarget {
 }
 
 /// Information about where builtin docs can be found.
-#[derive(Clone, Debug, PartialEq, GetSize, Default)]
+#[derive(Clone, Debug, PartialEq, Default, GetSize)]
 pub enum BuiltinDocs {
     #[default]
     None,

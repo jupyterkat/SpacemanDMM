@@ -1,9 +1,10 @@
 //! Port of icon smoothing subsystem.
+use dreammaker as dm;
 
-use crate::dmi::Dir;
 use crate::minimap::{Atom, GetVar, Neighborhood, Sprite};
 use dm::constants::Constant;
 use dm::objtree::ObjectTree;
+use tinydmi::prelude::Dir;
 
 use super::RenderPass;
 
@@ -38,7 +39,7 @@ impl RenderPass for IconSmoothing {
         atom: &Atom<'a>,
         sprite: &mut Sprite<'a>,
         _objtree: &'a ObjectTree,
-        _bump: &'a bumpalo::Bump,
+        _: &'a typed_arena::Arena<String>,
     ) {
         if atom.istype("/turf/closed/mineral/") {
             sprite.ofs_x -= 4;
@@ -52,15 +53,15 @@ impl RenderPass for IconSmoothing {
         objtree: &'a ObjectTree,
         neighborhood: &Neighborhood<'a, '_>,
         output: &mut Vec<Sprite<'a>>,
-        bump: &'a bumpalo::Bump,
+        arena: &'a typed_arena::Arena<String>,
     ) -> bool {
         let smooth_flags = self.mask & atom.get_var("smooth", objtree).to_int().unwrap_or(0);
         if smooth_flags & (SMOOTH_TRUE | SMOOTH_MORE) != 0 {
             let adjacencies = calculate_adjacencies(objtree, neighborhood, atom, smooth_flags);
             if smooth_flags & SMOOTH_DIAGONAL != 0 {
-                diagonal_smooth(output, objtree, bump, neighborhood, atom, adjacencies);
+                diagonal_smooth(output, objtree, arena, neighborhood, atom, adjacencies);
             } else {
-                cardinal_smooth(output, objtree, bump, atom, adjacencies);
+                cardinal_smooth(output, objtree, arena, atom, adjacencies);
             }
             false
         } else {
@@ -168,7 +169,7 @@ fn smoothlist_contains(list: &[(Constant, Option<Constant>)], desired: &str) -> 
 fn cardinal_smooth<'a>(
     output: &mut Vec<Sprite<'a>>,
     objtree: &'a ObjectTree,
-    bump: &'a bumpalo::Bump,
+    arena: &'a typed_arena::Arena<String>,
     source: &Atom<'a>,
     adjacencies: i32,
 ) {
@@ -180,20 +181,21 @@ fn cardinal_smooth<'a>(
     ] {
         let name = if (adjacencies & f1 != 0) && (adjacencies & f2 != 0) {
             if (adjacencies & f3) != 0 {
-                bumpalo::format!(in bump, "{}-f", what)
+                format!("{}-f", what)
             } else {
-                bumpalo::format!(in bump, "{}-{}{}", what, n1, n2)
+                format!("{}-{}{}", what, n1, n2)
             }
         } else if adjacencies & f1 != 0 {
-            bumpalo::format!(in bump, "{}-{}", what, n1)
+            format!("{}-{}", what, n1)
         } else if adjacencies & f2 != 0 {
-            bumpalo::format!(in bump, "{}-{}", what, n2)
+            format!("{}-{}", what, n2)
         } else {
-            bumpalo::format!(in bump, "{}-i", what)
+            format!("{}-i", what)
         };
+        let name = arena.alloc(name).as_str();
 
         let mut sprite = Sprite {
-            icon_state: name.into_bump_str(),
+            icon_state: name,
             ..source.sprite
         };
         if let Some(icon) = source.get_var("smooth_icon", objtree).as_path_str() {
@@ -206,7 +208,7 @@ fn cardinal_smooth<'a>(
 fn diagonal_smooth<'a>(
     output: &mut Vec<Sprite<'a>>,
     objtree: &'a ObjectTree,
-    bump: &'a bumpalo::Bump,
+    arena: &'a typed_arena::Arena<String>,
     neighborhood: &Neighborhood<'a, '_>,
     source: &Atom<'a>,
     adjacencies: i32,
@@ -228,7 +230,7 @@ fn diagonal_smooth<'a>(
     } else if adjacencies == N_SOUTH | N_EAST | N_SOUTHEAST {
         ["d-nw", "d-nw-1"]
     } else {
-        return cardinal_smooth(output, objtree, bump, source, adjacencies);
+        return cardinal_smooth(output, objtree, arena, source, adjacencies);
     };
 
     // turf underneath

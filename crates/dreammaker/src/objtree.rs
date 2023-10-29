@@ -3,13 +3,10 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use get_size::GetSize;
-use get_size_derive::GetSize;
-
-use ahash::RandomState;
-use indexmap::IndexMap;
-
 use crate::heap_size_of_index_map;
+use ahash::RandomState;
+use get_size::GetSize;
+use indexmap::IndexMap;
 
 use super::ast::{
     AsType, Block, Expression, Ident, Parameter, PathOp, ProcDeclBuilder, ProcDeclKind, ProcFlags,
@@ -1125,7 +1122,7 @@ impl ObjectTreeBuilder {
                 Some(name) => name,
                 None => return Ok(None), // var{} block, children will be real vars
             };
-            while let Some(flag) = VarTypeFlags::from_name(prev) {
+            while let Some(flag) = VarTypeFlags::typeflag_from_name(prev) {
                 if let Some(name) = rest.next() {
                     flags |= flag;
                     prev = name;

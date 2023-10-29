@@ -67,9 +67,8 @@ pub struct Debugger {
 }
 
 /// Severity overrides from configuration
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Default)]
 #[serde(rename_all(deserialize = "lowercase"))]
-#[derive(Default)]
 pub enum WarningLevel {
     #[serde(alias = "errors")]
     Error = 1,
@@ -200,13 +199,6 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn line_col(&self) -> Option<(u32, u16)> {
-        match self {
-            Error::Io(_) => None,
-            Error::Toml(toml) => toml.line_col().map(|(l, c)| (l as u32 + 1, c as u16 + 1)),
-        }
-    }
-
     pub fn into_boxed_error(self) -> Box<dyn std::error::Error + Send + Sync> {
         match self {
             Error::Io(err) => Box::new(err),

@@ -1,6 +1,3 @@
-extern crate chrono;
-extern crate git2;
-
 use std::env;
 use std::fs::File;
 use std::io::Write;

@@ -1,16 +1,18 @@
+use eyre::Result;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fs::File;
-use std::io;
 use std::path::Path;
+
+use dreammaker as dm;
 
 use ahash::RandomState;
 use indexmap::IndexMap;
 use ndarray::{self, Array3, Axis};
 
-use crate::dmi::Dir;
 use dm::constants::Constant;
 use dm::DMError;
+use tinydmi::prelude::Dir;
 
 mod read;
 mod save_tgm;
@@ -230,7 +232,7 @@ impl Map {
         Ok(map)
     }
 
-    pub fn to_file(&self, path: &Path) -> io::Result<()> {
+    pub fn to_file(&self, path: &Path) -> Result<()> {
         // DMM saver later
         save_tgm::save_tgm(self, File::create(path)?)
     }

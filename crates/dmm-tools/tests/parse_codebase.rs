@@ -1,7 +1,4 @@
-extern crate dmm_tools;
-extern crate walkdir;
-
-use dmm_tools::*;
+use dmm_tools::{dmi::IconFile, *};
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
@@ -43,6 +40,6 @@ fn parse_all_dmm() {
 #[test]
 fn parse_all_dmi() {
     files_with_extension("dmi", |path| {
-        dmi::Metadata::from_file(path).unwrap();
+        IconFile::from_file(path).unwrap();
     });
 }

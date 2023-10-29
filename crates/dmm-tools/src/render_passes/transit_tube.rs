@@ -1,5 +1,5 @@
 use super::*;
-use crate::dmi::Dir;
+use tinydmi::prelude::Dir;
 
 #[derive(Default)]
 pub struct TransitTube;
@@ -10,9 +10,9 @@ impl RenderPass for TransitTube {
         objtree: &'a ObjectTree,
         _: &mut Vec<Sprite<'a>>,
         overlays: &mut Vec<Sprite<'a>>,
-        _: &bumpalo::Bump,
+        _: &typed_arena::Arena<String>,
     ) {
-        use crate::dmi::Dir::*;
+        use tinydmi::prelude::Dir::*;
 
         if !atom.istype("/obj/structure/transit_tube/") {
             return;

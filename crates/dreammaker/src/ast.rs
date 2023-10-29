@@ -1,12 +1,10 @@
 //! The DM abstract syntax tree.
 //!
 //! Most AST types can be pretty-printed using the `Display` trait.
+use get_size::GetSize;
+use phf::phf_map;
 use std::fmt;
 use std::iter::FromIterator;
-
-use get_size::GetSize;
-use get_size_derive::GetSize;
-use phf::phf_map;
 
 use crate::error::Location;
 
@@ -356,7 +354,7 @@ impl AsType {
 ///
 /// Holds what sort of decl it was (did it use /proc or /verb), alongside a set of flags
 /// That describe extra info pulled from the path
-#[derive(Debug, Clone, PartialEq, Eq, Copy, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct ProcDeclBuilder {
     pub kind: ProcDeclKind,
     pub flags: ProcFlags,
@@ -427,23 +425,17 @@ impl fmt::Display for ProcDeclKind {
 }
 
 bitflags! {
-    #[derive(Default, GetSize)]
+    #[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct ProcFlags: u8 {
         // DM flags
+
         const FINAL = 1 << 0;
     }
 }
 
-impl ProcFlags {
-    pub fn from_name(name: &str) -> Option<ProcFlags> {
-        match name {
-            // DM flags
-            "final" => Some(ProcFlags::FINAL),
-            // Fallback
-            _ => None,
-        }
-    }
+impl GetSize for ProcFlags {}
 
+impl ProcFlags {
     #[inline]
     pub fn is_final(&self) -> bool {
         self.contains(ProcFlags::FINAL)
@@ -537,7 +529,7 @@ macro_rules! type_table {
 
 type_table! {
     /// A type specifier for verb arguments and input() calls.
-    #[derive(GetSize)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct InputType;
 
     // These values can be known with an invocation such as:
@@ -560,8 +552,10 @@ type_table! {
     "color",        COLOR,        1 << 17;
 }
 
+impl GetSize for InputType {}
+
 bitflags! {
-    #[derive(Default, GetSize)]
+    #[derive(Default, PartialEq, Eq, Debug, Clone)]
     pub struct VarTypeFlags: u8 {
         // DM flags
         const STATIC = 1 << 0;
@@ -574,8 +568,10 @@ bitflags! {
     }
 }
 
+impl GetSize for VarTypeFlags {}
+
 impl VarTypeFlags {
-    pub fn from_name(name: &str) -> Option<VarTypeFlags> {
+    pub fn typeflag_from_name(name: &str) -> Option<VarTypeFlags> {
         match name {
             // DM flags
             "global" | "static" => Some(VarTypeFlags::STATIC),
@@ -1261,7 +1257,7 @@ pub struct Parameter {
 impl fmt::Display for Parameter {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}{}", self.var_type, self.name)?;
-        if let Some(input_type) = self.input_type {
+        if let Some(input_type) = &self.input_type {
             write!(fmt, " as {}", input_type)?;
         }
         Ok(())
@@ -1332,7 +1328,7 @@ impl FromIterator<String> for VarTypeBuilder {
         let type_path = iter
             .into_iter()
             .skip_while(|p| {
-                if let Some(flag) = VarTypeFlags::from_name(p) {
+                if let Some(flag) = VarTypeFlags::typeflag_from_name(p) {
                     flags |= flag;
                     true
                 } else {

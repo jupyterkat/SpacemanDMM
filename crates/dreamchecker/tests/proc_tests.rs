@@ -1,4 +1,4 @@
-extern crate dreamchecker as dc;
+use dreamchecker as dc;
 
 use dc::test_helpers::check_errors_match;
 use dc::test_helpers::parse_a_file_for_test;

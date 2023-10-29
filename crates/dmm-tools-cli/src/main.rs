@@ -2,16 +2,10 @@
 #![forbid(unsafe_code)]
 #![doc(hidden)] // Don't interfere with lib docs.
 
-extern crate clap;
-extern crate rayon;
+use dreammaker as dm;
 
-extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-
-extern crate dmm_tools;
-extern crate dreammaker as dm;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -299,7 +293,7 @@ fn run(opt: &Opt, command: &Command, context: &mut Context) {
 
                 let do_z_level = |z| {
                     println!("{}generating z={}", prefix, 1 + z);
-                    let bump = Default::default();
+                    let arena = Default::default();
                     let minimap_context = minimap::Context {
                         objtree,
                         map: &map,
@@ -308,7 +302,7 @@ fn run(opt: &Opt, command: &Command, context: &mut Context) {
                         max: (max.x - 1, max.y - 1),
                         render_passes,
                         errors: &errors,
-                        bump: &bump,
+                        arena: &arena,
                     };
                     let image = minimap::generate(minimap_context, icon_cache).unwrap();
                     if let Err(e) = std::fs::create_dir_all(output) {
@@ -323,7 +317,7 @@ fn run(opt: &Opt, command: &Command, context: &mut Context) {
                         1 + z
                     );
                     println!("{}saving {}", prefix, outfile);
-                    image.to_file(outfile.as_ref()).unwrap();
+                    image.save(&outfile).unwrap();
                     if pngcrush {
                         println!("    pngcrush {}", outfile);
                         let temp = format!("{}.temp", outfile);
@@ -636,7 +630,7 @@ fn render_many(context: &Context, command: RenderManyCommand) -> RenderManyComma
                     eprintln!("{}/{}: render {:?}", file_idx, chunk_idx, chunk);
 
                     // Render the image.
-                    let bump = Default::default();
+                    let arena = Default::default();
                     let minimap_context = minimap::Context {
                         objtree,
                         map: &map,
@@ -652,7 +646,7 @@ fn render_many(context: &Context, command: RenderManyCommand) -> RenderManyComma
                         ),
                         render_passes,
                         errors: &errors,
-                        bump: &bump,
+                        arena: &arena,
                     };
                     let image = minimap::generate(minimap_context, icon_cache).unwrap(); // TODO: error handling
 
@@ -661,7 +655,7 @@ fn render_many(context: &Context, command: RenderManyCommand) -> RenderManyComma
                         PathBuf::from(format!("{}_z{}_chunk{}.png", stem, chunk.z, chunk_idx,));
                     eprintln!("{}/{}: save {}", file_idx, chunk_idx, filename.display());
                     let outfile = output_directory.join(&filename);
-                    image.to_file(&outfile).unwrap(); // TODO: error handling
+                    image.save(&outfile).unwrap(); // TODO: error handling
 
                     RenderManyChunkResult { filename }
                 })

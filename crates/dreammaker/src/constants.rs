@@ -3,11 +3,9 @@ use std::fmt;
 use std::ops;
 use std::path::Path;
 
-use get_size::GetSize;
-use get_size_derive::GetSize;
-
 use ahash::RandomState;
 use color_space::{Hsl, Hsv, Lch, Rgb};
+use get_size::GetSize;
 use indexmap::IndexMap;
 use ordered_float::OrderedFloat;
 
@@ -220,7 +218,7 @@ impl Constant {
 
     pub fn as_str(&self) -> Option<&str> {
         match *self {
-            Constant::String(ref s) => Some(s.as_ref()),
+            Constant::String(ref s) => Some(s),
             _ => None,
         }
     }

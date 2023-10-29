@@ -2,6 +2,7 @@
 //! language server protocol.
 #![allow(dead_code)]
 
+use jsonrpc_core as jsonrpc;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::{self, BufRead, Read};

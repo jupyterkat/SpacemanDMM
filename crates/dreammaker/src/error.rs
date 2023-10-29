@@ -8,7 +8,6 @@ use std::{error, fmt, io};
 use ahash::RandomState;
 
 use get_size::GetSize;
-use get_size_derive::GetSize;
 use termcolor::{Color, ColorSpec};
 
 use crate::config::Config;
@@ -129,14 +128,17 @@ impl Context {
     pub fn force_config(&self, toml: &Path) {
         match Config::read_toml(toml) {
             Ok(config) => *self.config.borrow_mut() = config,
-            Err(io_error) => {
+            Err(e) => {
                 let file = self.register_file(toml);
-                let (line, column) = io_error.line_col().unwrap_or((1, 1));
                 DMError::new(
-                    Location { file, line, column },
+                    Location {
+                        file,
+                        line: 1,
+                        column: 1,
+                    },
                     "Error reading configuration file",
                 )
-                .with_boxed_cause(io_error.into_boxed_error())
+                .with_boxed_cause(e.into_boxed_error())
                 .register(self);
             }
         }

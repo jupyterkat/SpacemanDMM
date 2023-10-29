@@ -2,6 +2,7 @@
 
 use std::collections::HashSet;
 
+use dreammaker as dm;
 use lsp_types::*;
 
 use dm::annotation::Annotation;
@@ -183,7 +184,7 @@ impl<'a> Engine<'a> {
         // follow the path ops until we hit 'proc' or 'verb'
         let mut iter = parts.iter();
         let mut decl = None;
-        for &(op, ref name) in iter.by_ref() {
+        for (op, name) in iter.by_ref() {
             if name == "proc" {
                 decl = Some("proc");
                 break;
@@ -191,7 +192,7 @@ impl<'a> Engine<'a> {
                 decl = Some("verb");
                 break;
             }
-            if let Some(next) = ty.navigate(op, name) {
+            if let Some(next) = ty.navigate(*op, name) {
                 ty = next;
             } else {
                 break;

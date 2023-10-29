@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
     "crates/builtins-proc-macro",
     "crates/dap-types",
@@ -9,6 +10,7 @@ members = [
     "crates/dreamchecker",
     "crates/dreammaker",
     "crates/interval-tree",
+    "crates/tinydmi"
     #"crates/spaceman-dmm",
 ]
 

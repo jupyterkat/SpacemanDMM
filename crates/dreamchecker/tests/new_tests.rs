@@ -1,4 +1,4 @@
-extern crate dreamchecker as dc;
+use dreamchecker as dc;
 
 use dc::test_helpers::*;
 
@@ -10,7 +10,7 @@ pub const NEW_DOT_ERRORS: &[(u32, u16, &str)] = &[(
 
 #[test]
 fn new_dot() {
-    let code = r#"
+    let code = r##"
 /mob/subtype
 /mob/proc/foo()
 /mob/proc/test()
@@ -25,7 +25,7 @@ fn new_dot() {
     new foo()()
     new /obj[0]() // TODO: see parser.rs
     new 2 + 2() // TODO: see parser.rs
-"#
+"##
     .trim();
     check_errors_match(code, NEW_DOT_ERRORS);
 }
