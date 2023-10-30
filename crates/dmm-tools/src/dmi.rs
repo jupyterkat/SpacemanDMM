@@ -151,6 +151,7 @@ pub fn composite(
     pos_to: Coordinate,
     crop_from: Rect,
     tint_color: [u8; 4],
+    transform: Option<[f32; 6]>,
 ) -> Result<()> {
     if crop_from.x + crop_from.width > from.width()
         || crop_from.y + crop_from.height > from.height()
@@ -161,11 +162,32 @@ pub fn composite(
             from.height()
         ));
     }
-    let image_view = from.view(crop_from.x, crop_from.y, crop_from.width, crop_from.height);
+    let mut image_copy = from
+        .view(crop_from.x, crop_from.y, crop_from.width, crop_from.height)
+        .to_image();
 
-    for (x, y, from_pix) in image_view.pixels() {
-        let mut tinted_from = from_pix;
+    if let Some(thin) = transform {
+        if let Some(projection) = imageproc::geometric_transformations::Projection::from_matrix([
+            1.0 + thin[0],
+            thin[1],
+            thin[2],
+            thin[3],
+            1.0 + thin[4],
+            thin[5],
+            0.0,
+            0.0,
+            1.0,
+        ]) {
+            image_copy = imageproc::geometric_transformations::warp(
+                &image_copy,
+                &projection,
+                imageproc::geometric_transformations::Interpolation::Nearest,
+                image::Rgba::from([0, 0, 0, 0]),
+            )
+        }
+    }
 
+    for (x, y, from_pix) in image_copy.enumerate_pixels_mut() {
         let Some(to_pix) = to.get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
             tracing::error!(
                 "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
@@ -177,17 +199,17 @@ pub fn composite(
             continue;
         };
 
-        tinted_from
+        from_pix
             .0
             .iter_mut()
             .enumerate()
             .for_each(|(num, channel)| *channel = mul255(*channel, tint_color[num]));
-        let out_alpha = tinted_from[ALPHA] + mul255(to_pix[ALPHA], 255 - tinted_from[ALPHA]);
+        let out_alpha = from_pix[ALPHA] + mul255(to_pix[ALPHA], 255 - from_pix[ALPHA]);
 
         if out_alpha != 0 {
             (0..3).for_each(|i| {
-                to_pix[i] = ((tinted_from[i] as u32 * tinted_from[ALPHA] as u32
-                    + to_pix[i] as u32 * to_pix[ALPHA] as u32 * (255 - tinted_from[ALPHA] as u32)
+                to_pix[i] = ((from_pix[i] as u32 * from_pix[ALPHA] as u32
+                    + to_pix[i] as u32 * to_pix[ALPHA] as u32 * (255 - from_pix[ALPHA] as u32)
                         / 255)
                     / out_alpha as u32) as u8;
             })
@@ -224,6 +246,7 @@ fn composite_test() {
             height: 2,
         },
         NO_TINT,
+        None,
     )
     .unwrap();
 

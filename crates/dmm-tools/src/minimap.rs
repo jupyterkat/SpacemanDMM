@@ -179,6 +179,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> eyre::Result<image::Rgb
                     corrected_loc,
                     corrected_rect,
                     sprite.color,
+                    sprite.matrix,
                 )
                 .wrap_err_with(|| {
                     format!(
@@ -552,6 +553,8 @@ pub struct Sprite<'s> {
     // sorting
     pub plane: i32,
     pub layer: Layer,
+
+    pub matrix: Option<[f32; 6]>,
 }
 
 impl<'s> Sprite<'s> {
@@ -562,6 +565,19 @@ impl<'s> Sprite<'s> {
         let pixel_z = vars.get_var("pixel_z", objtree).to_int().unwrap_or(0);
         let step_x = vars.get_var("step_x", objtree).to_int().unwrap_or(0);
         let step_y = vars.get_var("step_y", objtree).to_int().unwrap_or(0);
+
+        let matrix = match vars.get_var("transform", objtree) {
+            Constant::Call(dm::constants::ConstFn::Matrix, args) => args
+                .iter()
+                .filter_map(|item| {
+                    item.1.as_ref().map(|constant| match constant {
+                        Constant::Float(num) => Some(*num),
+                        _ => None,
+                    })
+                })
+                .collect::<Option<Vec<_>>>(),
+            _ => None,
+        };
 
         Sprite {
             category: Category::from_path(vars.get_path()),
@@ -577,6 +593,7 @@ impl<'s> Sprite<'s> {
             ofs_y: pixel_y + pixel_z + step_y,
             plane: plane_of(objtree, vars),
             layer: layer_of(objtree, vars),
+            matrix: matrix.map(|item| item.try_into().ok()).flatten(),
         }
     }
 }
@@ -593,6 +610,7 @@ impl<'s> Default for Sprite<'s> {
             ofs_y: 0,
             plane: 0,
             layer: Layer::default(),
+            matrix: None,
         }
     }
 }

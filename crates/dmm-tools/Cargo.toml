@@ -17,6 +17,7 @@ image = "0.24.7"
 png = "0.17.10"
 eyre = "0.6.8"
 tracing = "0.1"
+imageproc = "0.23.0"
 
 [dependencies.bytemuck]
 version = "1.14.0"

@@ -181,6 +181,7 @@ impl<'a> IconRenderer<'a> {
                 (self.source.metadata.header.width * (dir_no as u32), 0),
                 frame_rect,
                 NO_TINT,
+                None,
             );
         }
     }
