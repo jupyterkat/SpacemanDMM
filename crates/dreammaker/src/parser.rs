@@ -1865,7 +1865,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
         success(Statement::ForRange(Box::new(ForRangeStatement {
             var_type,
             name: name.into(),
-            start: start,
+            start,
             end: end,
             step,
             block: require!(self.block(&LoopContext::ForRange)),
