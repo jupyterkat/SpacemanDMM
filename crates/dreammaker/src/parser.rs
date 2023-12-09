@@ -1866,7 +1866,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
             var_type,
             name: name.into(),
             start,
-            end: end,
+            end,
             step,
             block: require!(self.block(&LoopContext::ForRange)),
         })))

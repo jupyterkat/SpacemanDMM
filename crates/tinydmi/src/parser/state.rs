@@ -15,38 +15,11 @@ use super::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Frames {
-    One,
-    Count(u32),
-    Delays(Vec<f32>),
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<u32> for Frames {
-    fn into(self) -> u32 {
-        match self {
-            Frames::One => 1,
-            Frames::Count(u) => u,
-            Frames::Delays(v) => v.len() as u32,
-        }
-    }
-}
-
-impl Frames {
-    pub fn get_num(&self) -> u32 {
-        match self {
-            Frames::One => 1,
-            Frames::Count(u) => *u,
-            Frames::Delays(v) => v.len() as u32,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct State {
     pub name: String,
     pub dirs: Dirs,
-    pub frames: Frames,
+    pub frames: u32,
+    pub delays: Option<Vec<f32>>,
     pub r#loop: bool,
     pub rewind: bool,
     pub movement: bool,
@@ -57,15 +30,15 @@ pub struct State {
 impl State {
     pub fn is_animated(&self) -> bool {
         match self.frames {
-            Frames::One | Frames::Count(1) => false,
-            Frames::Count(_) => true,
-            Frames::Delays(_) => true,
+            1 => false,
+            2.. => true,
+            _ => unreachable!(),
         }
     }
 
     pub fn num_sprites(&self) -> usize {
         let dirs: u32 = self.dirs.into();
-        let frames: u32 = self.frames.clone().into();
+        let frames = self.frames;
         (dirs * frames) as usize
     }
 }
@@ -80,7 +53,8 @@ impl TryFrom<(KeyValue, Vec<KeyValue>)> for State {
         };
 
         let mut dirs = None;
-        let mut frames = Frames::One;
+        let mut frames = 1;
+        let mut delays = None;
         let mut r#loop = false;
         let mut rewind = false;
         let mut movement = false;
@@ -91,19 +65,15 @@ impl TryFrom<(KeyValue, Vec<KeyValue>)> for State {
             match kv {
                 KeyValue::Dirs(d) => dirs = Some(d),
                 KeyValue::Frames(f) => {
-                    if matches!(frames, Frames::One) {
-                        if f == 1 {
-                            frames = Frames::One
-                        } else {
-                            frames = Frames::Count(f);
-                        }
+                    if frames == 1 {
+                        frames = f;
                     } else {
                         return Err(format_err!("Found `frames` in illegal position"));
                     }
                 }
                 KeyValue::Delay(f) => {
-                    if matches!(frames, Frames::Count(_)) {
-                        frames = Frames::Delays(f)
+                    if delays.is_none() {
+                        delays = Some(f)
                     } else {
                         return Err(format_err!("Found `delay` key without `frames` key"));
                     }
@@ -140,6 +110,7 @@ impl TryFrom<(KeyValue, Vec<KeyValue>)> for State {
             name,
             dirs: dirs.ok_or_else(|| eyre::eyre!("Required field `dirs` was not found"))?,
             frames,
+            delays,
             r#loop,
             rewind,
             movement,
@@ -177,7 +148,7 @@ state = "duplicate"
 
         let (_, state) = state(description).unwrap();
         assert_eq!(state.dirs, Dirs::One);
-        assert_eq!(state.frames, Frames::One);
+        assert_eq!(state.frames, 1);
         assert_eq!(state.name, "duplicate");
     }
 
@@ -195,10 +166,7 @@ state = "..."
         let (tail, state) = state(description).unwrap();
         assert_eq!(tail, r#"state = "...""#);
         assert_eq!(state.dirs, Dirs::One);
-        assert_eq!(
-            state.frames,
-            Frames::Delays(Vec::from([1.0, 2.0, 5.4, 3.0]))
-        );
+        assert_eq!(state.delays, Some(Vec::from([1.0, 2.0, 5.4, 3.0])));
         assert_eq!(state.name, "bluespace_coffee");
     }
 

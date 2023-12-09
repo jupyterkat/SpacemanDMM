@@ -10,10 +10,10 @@ name = "dmm-tools"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.4.7", features = ["derive"] }
-serde = "1.0.190"
-serde_derive = "1.0.190"
-serde_json = "1.0.107"
+clap = { version = "4.4.11", features = ["derive"] }
+serde = "1.0.193"
+serde_derive = "1.0.193"
+serde_json = "1.0.108"
 rayon = "1.8.0"
 dreammaker = { path = "../dreammaker" }
 dmm-tools = { path = "../dmm-tools" }

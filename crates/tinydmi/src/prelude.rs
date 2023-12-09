@@ -6,6 +6,5 @@ pub use crate::parser::metadata::Header;
 pub use crate::parser::metadata::IconIndex;
 pub use crate::parser::metadata::IconLocation;
 pub use crate::parser::metadata::Metadata;
-pub use crate::parser::state::Frames;
 pub use crate::parser::state::State;
 pub use crate::parser::values::Value;

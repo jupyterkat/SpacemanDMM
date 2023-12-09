@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 nom = "7.1.3"
-eyre = "0.6.8"
+eyre = "0.6.10"
 ahash = "0.8.6"
-indexmap = "2.0.2"
-num-traits = "0.2.17"
+indexmap = "2.1.0"

@@ -2,7 +2,7 @@ use super::*;
 use either::Either;
 use eyre::Result;
 use image::{ImageOutputFormat, RgbaImage};
-use tinydmi::prelude::{Dirs, Frames, State};
+use tinydmi::prelude::{Dirs, State};
 
 /// Used to render an IconFile to a .gif/.png easily.
 #[derive(Debug)]
@@ -100,11 +100,7 @@ impl<'a> IconRenderer<'a> {
 impl<'a> IconRenderer<'a> {
     /// Helper for render_to_images- not used for render_gif because it's less efficient.
     fn render_frames(&self, icon_state: &State, icon_index: IconIndex<'_>) -> Vec<RgbaImage> {
-        let frames = match &icon_state.frames {
-            Frames::One => 1,
-            Frames::Count(count) => *count,
-            Frames::Delays(delays) => delays.len() as u32,
-        };
+        let frames = icon_state.frames;
         let mut canvas = self.get_canvas(icon_state.dirs);
         let mut vec = Vec::new();
         let range = if icon_state.rewind {
@@ -197,12 +193,8 @@ impl<'a> IconRenderer<'a> {
             return Err(eyre::eyre!("Tried to render gif with one frame",));
         }
 
-        let (frames, delays) = match &icon_state.frames {
-            Frames::Count(frames) => (*frames, None),
-            Frames::Delays(delays) => (delays.len() as u32, Some(delays)),
-            _ => unreachable!(),
-        };
-        let frames = frames as usize;
+        let frames = icon_state.frames as usize;
+        let delays = icon_state.delays.as_ref();
 
         let mut canvas = self.get_canvas(icon_state.dirs);
 

@@ -219,7 +219,7 @@ pub fn metadata(input: &str) -> IResult<&str, Metadata> {
         Default::default();
 
     states.into_iter().fold(0, |cursor, state| {
-        let num_states = state.frames.get_num() * state.dirs.get_num();
+        let num_states = state.frames * state.dirs.get_num();
         state_map
             .entry(state.name.clone())
             .or_default()
@@ -238,7 +238,7 @@ pub fn metadata(input: &str) -> IResult<&str, Metadata> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{key_value::Dirs, state::Frames};
+    use crate::parser::key_value::Dirs;
 
     use super::*;
     #[test]
@@ -273,10 +273,8 @@ state = "state2"
 
         assert_eq!(metadata.states[0][0].1.name, "state1".to_string());
         assert_eq!(metadata.states[0][0].1.dirs, Dirs::Four);
-        assert_eq!(
-            metadata.states[0][0].1.frames,
-            Frames::Delays(Vec::from([1.2, 1.0]))
-        );
+        assert_eq!(metadata.states[0][0].1.frames, 2);
+        assert_eq!(metadata.states[0][0].1.delays, Some(Vec::from([1.2, 1.0])));
         assert!(metadata.states[0][0].1.movement);
         assert!(metadata.states[0][0].1.r#loop);
         assert!(!metadata.states[0][0].1.rewind);
@@ -284,7 +282,7 @@ state = "state2"
 
         assert_eq!(metadata.states[1][0].1.name, "state2".to_string());
         assert_eq!(metadata.states[1][0].1.dirs, Dirs::One);
-        assert_eq!(metadata.states[1][0].1.frames, Frames::One);
+        assert_eq!(metadata.states[1][0].1.frames, 1);
 
         dbg!(metadata);
     }
