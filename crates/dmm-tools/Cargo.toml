@@ -15,7 +15,7 @@ either = "1.9.0"
 typed-arena = "2.0.2"
 image = "0.24.7"
 png = "0.17.10"
-eyre = "0.6.10"
+eyre = "0.6.11"
 tracing = "0.1"
 imageproc = "0.23.0"
 
