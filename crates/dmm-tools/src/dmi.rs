@@ -106,15 +106,7 @@ impl IconFile {
             });
         }
         let icon_index = self.metadata.get_index_of_frame(icon_state, dir, 0)?;
-
-        let icon_count = self.image.width() / self.metadata.header.width;
-        let (icon_x, icon_y) = (icon_index % icon_count, icon_index / icon_count);
-        Some(Rect {
-            x: icon_x * self.metadata.header.width,
-            y: icon_y * self.metadata.header.height,
-            width: self.metadata.header.width,
-            height: self.metadata.header.height,
-        })
+        Some(self.rect_of_index(icon_index))
     }
 
     pub fn rect_of_index(&self, icon_index: u32) -> Rect {
@@ -269,6 +261,45 @@ fn composite_test() {
     println!("{image:?}");
     assert!(map_vec == image_vec)
 }
+
+//#[test]
+//fn dmi_test() {
+//    let icon_file = IconFile {
+//        metadata: tinydmi::parse(
+//            r#"
+//# BEGIN DMI
+//version = 4.0
+//	width = 32
+//	height = 32
+//state = "closing"
+//	dirs = 1
+//	frames = 8
+//	delay = 1,1,1,1,1,1,1,4
+//state = "opening"
+//	dirs = 1
+//	frames = 8
+//	delay = 1,1,1,1,1,1,1,4
+//state = "open"
+//	dirs = 1
+//	frames = 1
+//state = "closed"
+//	dirs = 1
+//	frames = 1
+//# END DMI
+//    "#
+//            .trim(),
+//        )
+//        .unwrap(),
+//        image: image::RgbaImage::new(160, 180),
+//    };
+//    // for index in 0..10 {
+//    //     println!("index is {index}");
+//    //     let rect = icon_file.rect_of_index(index);
+//    //     println!("{rect:#?}");
+//    // }
+//    let rect = icon_file.rect_of(IconIndex::new(0, "closed"), Dir::South);
+//    println!("{rect:#?}");
+//}
 /*
 // ----------------------------------------------------------------------------
 // Image manipulation
