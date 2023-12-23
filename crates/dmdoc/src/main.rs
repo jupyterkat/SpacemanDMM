@@ -1,21 +1,18 @@
 //! A CLI tool to generate HTML documentation of DreamMaker codebases.
 #![forbid(unsafe_code)]
 use dreammaker as dm;
-#[macro_use]
-extern crate serde_derive;
 
 mod markdown;
 mod template;
 
 use dm::objtree::ObjectTree;
+use maud::{Markup, PreEscaped};
 use pulldown_cmark::{BrokenLink, CowStr};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-use tera::Value;
 
 use dm::docs::*;
 
@@ -235,7 +232,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
             range.start.line,
             ModuleItem::Define {
                 name,
-                teaser: docs.teaser().to_owned(),
+                teaser: PreEscaped(docs.teaser().0.to_owned()),
             },
         ));
         module.defines.insert(
@@ -390,7 +387,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                         var.value.location.line,
                         ModuleItem::GlobalVar {
                             name,
-                            teaser: block.teaser().to_owned(),
+                            teaser: PreEscaped(block.teaser().0.to_owned()),
                         },
                     ));
                 }
@@ -401,8 +398,8 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                     is_const: decl.var_type.flags.is_const(),
                     is_tmp: decl.var_type.flags.is_tmp(),
                     is_final: decl.var_type.flags.is_final(),
-                    is_private: decl.var_type.flags.is_private(),
-                    is_protected: decl.var_type.flags.is_protected(),
+                    //is_private: decl.var_type.flags.is_private(),
+                    //is_protected: decl.var_type.flags.is_protected(),
                     path: &decl.var_type.type_path,
                 });
                 parsed_type.vars.insert(
@@ -462,7 +459,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                         proc_value.location.line,
                         ModuleItem::GlobalProc {
                             name,
-                            teaser: block.teaser().to_owned(),
+                            teaser: PreEscaped(block.teaser().0.to_owned()),
                         },
                     ));
                 }
@@ -501,7 +498,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                 ty.location.line,
                 ModuleItem::Type {
                     path: ty.get().pretty_path(),
-                    teaser: block.teaser().to_owned(),
+                    teaser: PreEscaped(block.teaser().0.to_owned()),
                     substance,
                 },
             ));
@@ -580,7 +577,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                             let (title, block) =
                                 DocBlock::parse_with_title(&doc.text(), Some(broken_link_callback));
                             module.name = title;
-                            module.teaser = block.teaser().to_owned();
+                            module.teaser = PreEscaped(block.teaser().0.to_owned());
                             module.items.push(ModuleItem::Docs(block.html));
                         } else {
                             module.items.push(ModuleItem::Docs(markdown::render(
@@ -646,38 +643,30 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    /*
     // load tera templates
     println!("loading templates");
     let mut tera = template::builtin()?;
 
     // register tera extensions
-    let linkify_typenames = all_type_names;
-    tera.register_filter(
-        "linkify_type",
-        move |value: &Value, _: &HashMap<String, Value>| match *value {
-            tera::Value::String(ref s) => Ok(linkify_type(
-                &linkify_typenames,
-                s.split('/').skip_while(|b| b.is_empty()),
-            )
-            .into()),
-            tera::Value::Array(ref a) => {
-                Ok(linkify_type(&linkify_typenames, a.iter().filter_map(|v| v.as_str())).into())
-            }
+    let linkify_typenames = all_type_names.clone();
+    tera.register_filter("linkify_type", move |value: &Value, _: &HashMap<String, Value>| {
+        match *value {
+            tera::Value::String(ref s) => Ok(linkify_type(&linkify_typenames, s.split('/').skip_while(|b| b.is_empty())).into()),
+            tera::Value::Array(ref a) => Ok(linkify_type(&linkify_typenames, a.iter().filter_map(|v| v.as_str())).into()),
             _ => Err("linkify_type() input must be string".into()),
-        },
-    );
-    tera.register_filter(
-        "length",
-        |value: &Value, _: &HashMap<String, Value>| match *value {
+        }
+    });
+    tera.register_filter("length", |value: &Value, _: &HashMap<String, Value>| {
+        match *value {
             tera::Value::String(ref s) => Ok(s.len().into()),
             tera::Value::Array(ref a) => Ok(a.len().into()),
             tera::Value::Object(ref o) => Ok(o.len().into()),
             _ => Ok(0.into()),
-        },
-    );
-    tera.register_filter(
-        "substring",
-        |value: &Value, opts: &HashMap<String, Value>| match *value {
+        }
+    });
+    tera.register_filter("substring", |value: &Value, opts: &HashMap<String, Value>| {
+        match *value {
             tera::Value::String(ref s) => {
                 let start = opts.get("start").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
                 let mut end = opts
@@ -691,8 +680,9 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(s[start..end].into())
             }
             _ => Err("substring() input must be string".into()),
-        },
-    );
+        }
+    });
+    */
 
     // render
     println!("saving static resources");
@@ -716,6 +706,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
         println!("incomplete git info: {}", e);
     }
     let env = &Environment {
+        all_type_names: &all_type_names,
         dmdoc: DmDoc {
             version: env!("CARGO_PKG_VERSION"),
             url: env!("CARGO_PKG_HOMEPAGE"),
@@ -737,59 +728,43 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("rendering html");
     {
-        #[derive(Serialize)]
-        struct Index<'a> {
-            env: &'a Environment<'a>,
-            html: Option<&'a str>,
-            modules: Vec<IndexTree<'a>>,
-            types: Vec<IndexTree<'a>>,
-        }
-
         let mut index = create(&output_path.join("index.html"))?;
         index.write_all(
-            tera.render(
-                "dm_index.html",
-                &tera::Context::from_serialize(Index {
-                    env,
-                    html: index_docs.as_ref().map(|(_, docs)| &docs.html[..]),
-                    modules: build_index_tree(modules.values().map(|module| IndexTree {
-                        htmlname: &module.htmlname,
-                        full_name: &module.htmlname,
-                        self_name: match module.name {
-                            None => last_element(&module.htmlname),
-                            Some(ref t) => t.as_str(),
-                        },
-                        teaser: &module.teaser,
-                        no_substance: false,
-                        children: Vec::new(),
-                    })),
-                    types: build_index_tree(type_docs.iter().map(|(path, ty)| IndexTree {
-                        htmlname: ty.htmlname,
-                        full_name: path,
-                        self_name: if ty.name.is_empty() {
-                            last_element(path)
-                        } else {
-                            &ty.name
-                        },
-                        teaser: ty.docs.as_ref().map_or("", |d| d.teaser()),
-                        no_substance: !ty.substance,
-                        children: Vec::new(),
-                    })),
-                })?,
-            )?
+            template::dm_index(&Index {
+                env,
+                html: index_docs
+                    .as_ref()
+                    .map(|(_, docs)| PreEscaped(docs.html.0.as_str())),
+                modules: build_index_tree(modules.values().map(|module| IndexTree {
+                    htmlname: &module.htmlname,
+                    full_name: &module.htmlname,
+                    self_name: match module.name {
+                        None => last_element(&module.htmlname),
+                        Some(ref t) => t.as_str(),
+                    },
+                    teaser: PreEscaped(&module.teaser.0),
+                    no_substance: false,
+                    children: Vec::new(),
+                })),
+                types: build_index_tree(type_docs.iter().map(|(path, ty)| IndexTree {
+                    htmlname: ty.htmlname,
+                    full_name: path,
+                    self_name: if ty.name.is_empty() {
+                        last_element(path)
+                    } else {
+                        &ty.name
+                    },
+                    teaser: ty.docs.as_ref().map_or(PreEscaped(""), |d| d.teaser()),
+                    no_substance: !ty.substance,
+                    children: Vec::new(),
+                })),
+            })
+            .0
             .as_bytes(),
         )?;
     }
 
-    for (path, details) in modules.iter() {
-        #[derive(Serialize)]
-        struct ModuleArgs<'a> {
-            env: &'a Environment<'a>,
-            base_href: &'a str,
-            path: &'a str,
-            details: &'a Module<'a>,
-        }
-
+    for (_path, details) in modules.iter() {
         let fname = format!("{}.html", details.htmlname);
 
         let mut base = String::new();
@@ -799,15 +774,13 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut f = create(&output_path.join(&fname))?;
         f.write_all(
-            tera.render(
-                "dm_module.html",
-                &tera::Context::from_serialize(ModuleArgs {
-                    env,
-                    base_href: &base,
-                    path,
-                    details,
-                })?,
-            )?
+            template::dm_module(&ModuleArgs {
+                env,
+                base_href: &base,
+                //path,
+                details,
+            })
+            .0
             .as_bytes(),
         )?;
     }
@@ -817,15 +790,6 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-        #[derive(Serialize)]
-        struct Type<'a> {
-            env: &'a Environment<'a>,
-            base_href: &'a str,
-            path: &'a str,
-            details: &'a ParsedType<'a>,
-            types: &'a BTreeMap<&'a str, ParsedType<'a>>,
-        }
-
         let fname = format!("{}.html", details.htmlname);
 
         let mut base = String::new();
@@ -835,16 +799,14 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut f = create(&output_path.join(&fname))?;
         f.write_all(
-            tera.render(
-                "dm_type.html",
-                &tera::Context::from_serialize(Type {
-                    env,
-                    base_href: &base,
-                    path,
-                    details,
-                    types: &type_docs,
-                })?,
-            )?
+            template::dm_type(&Type {
+                env,
+                base_href: &base,
+                path,
+                details,
+                //types: &type_docs,
+            })
+            .0
             .as_bytes(),
         )?;
     }
@@ -1278,12 +1240,11 @@ fn strip_propriety(name: &str) -> &str {
 // ----------------------------------------------------------------------------
 // Tree stuff
 
-#[derive(Serialize)]
 struct IndexTree<'a> {
     htmlname: &'a str, // href="{{htmlname}}.html"
     full_name: &'a str,
     self_name: &'a str,
-    teaser: &'a str,
+    teaser: PreEscaped<&'a str>,
     no_substance: bool,
     children: Vec<IndexTree<'a>>,
 }
@@ -1296,7 +1257,7 @@ where
         htmlname: "",
         full_name: "",
         self_name: "",
-        teaser: "",
+        teaser: PreEscaped(""),
         no_substance: false,
         children: Vec::new(),
     }];
@@ -1336,7 +1297,7 @@ where
                     htmlname: "",
                     full_name: &each.full_name[..len + bit.len()],
                     self_name: bit,
-                    teaser: "",
+                    teaser: PreEscaped(""),
                     no_substance: true,
                     children: Vec::new(),
                 });
@@ -1378,7 +1339,7 @@ struct Module1<'a> {
     htmlname: String,
     orig_filename: String,
     name: Option<String>,
-    teaser: String,
+    teaser: PreEscaped<String>,
     items_wip: Vec<(u32, ModuleItem<'a>)>,
     defines: BTreeMap<&'a str, Define<'a>>,
 }
@@ -1386,8 +1347,30 @@ struct Module1<'a> {
 // ----------------------------------------------------------------------------
 // Templating structs
 
-#[derive(Serialize)]
+struct Index<'a> {
+    env: &'a Environment<'a>,
+    html: Option<PreEscaped<&'a str>>,
+    modules: Vec<IndexTree<'a>>,
+    types: Vec<IndexTree<'a>>,
+}
+
+struct ModuleArgs<'a> {
+    env: &'a Environment<'a>,
+    base_href: &'a str,
+    //path: &'a str,
+    details: &'a Module<'a>,
+}
+
+struct Type<'a> {
+    env: &'a Environment<'a>,
+    base_href: &'a str,
+    path: &'a str,
+    details: &'a ParsedType<'a>,
+    //types: &'a BTreeMap<&'a str, ParsedType<'a>>,
+}
+
 struct Environment<'a> {
+    all_type_names: &'a BTreeSet<String>,
     dmdoc: DmDoc,
     filename: &'a str,
     world_name: &'a str,
@@ -1396,14 +1379,28 @@ struct Environment<'a> {
     git: Git,
 }
 
-#[derive(Serialize)]
+impl<'a> Environment<'a> {
+    fn linkify_type_str(&self, s: &str) -> Markup {
+        PreEscaped(linkify_type(
+            self.all_type_names,
+            s.split('/').skip_while(|b| b.is_empty()),
+        ))
+    }
+
+    fn linkify_type_array(&self, a: &[String]) -> Markup {
+        PreEscaped(linkify_type(
+            self.all_type_names,
+            a.iter().map(|x| x.as_str()),
+        ))
+    }
+}
+
 struct DmDoc {
     version: &'static str,
     url: &'static str,
     build_info: &'static str,
 }
 
-#[derive(Serialize)]
 struct Coverage {
     modules: usize,
     macros_documented: usize,
@@ -1413,7 +1410,7 @@ struct Coverage {
     types_all: usize,
 }
 
-#[derive(Serialize, Default)]
+#[derive(Default)]
 struct Git {
     revision: String,
     branch: String,
@@ -1422,7 +1419,7 @@ struct Git {
 }
 
 /// A parsed documented type.
-#[derive(Default, Serialize)]
+#[derive(Default)]
 struct ParsedType<'a> {
     name: std::borrow::Cow<'a, str>,
     parent_type: Option<&'a str>,
@@ -1435,29 +1432,25 @@ struct ParsedType<'a> {
     line: u32,
 }
 
-#[derive(Serialize)]
 struct Var<'a> {
     docs: DocBlock,
     decl: &'static str,
-    #[serde(rename = "type")]
     type_: Option<VarType<'a>>,
     file: PathBuf,
     line: u32,
     parent: Option<String>,
 }
 
-#[derive(Serialize)]
 struct VarType<'a> {
     is_static: bool,
     is_const: bool,
     is_tmp: bool,
     is_final: bool,
-    is_private: bool,
-    is_protected: bool,
+    //is_private: bool,
+    //is_protected: bool,
     path: &'a [String],
 }
 
-#[derive(Serialize)]
 struct Proc {
     docs: DocBlock,
     decl: &'static str,
@@ -1467,24 +1460,22 @@ struct Proc {
     parent: Option<String>,
 }
 
-#[derive(Serialize)]
 struct Param {
     name: String,
     type_path: String,
 }
 
 /// Module struct exposed to templates.
-#[derive(Default, Serialize)]
+#[derive(Default)]
 struct Module<'a> {
     htmlname: String,
     orig_filename: String,
     name: Option<String>,
-    teaser: String,
+    teaser: PreEscaped<String>,
     items: Vec<ModuleItem<'a>>,
     defines: BTreeMap<&'a str, Define<'a>>,
 }
 
-#[derive(Serialize)]
 struct Define<'a> {
     docs: DocBlock,
     has_params: bool,
@@ -1493,25 +1484,27 @@ struct Define<'a> {
     line: u32,
 }
 
-#[derive(Serialize)]
 enum ModuleItem<'a> {
     // preparation
-    #[serde(skip)]
     DocComment(DocComment),
 
     // rendering
-    #[serde(rename = "docs")]
-    Docs(String),
-    #[serde(rename = "define")]
-    Define { name: &'a str, teaser: String },
-    #[serde(rename = "type")]
+    Docs(PreEscaped<String>),
+    Define {
+        name: &'a str,
+        teaser: PreEscaped<String>,
+    },
     Type {
         path: &'a str,
-        teaser: String,
+        teaser: PreEscaped<String>,
         substance: bool,
     },
-    #[serde(rename = "global_proc")]
-    GlobalProc { name: &'a str, teaser: String },
-    #[serde(rename = "global_var")]
-    GlobalVar { name: &'a str, teaser: String },
+    GlobalProc {
+        name: &'a str,
+        teaser: PreEscaped<String>,
+    },
+    GlobalVar {
+        name: &'a str,
+        teaser: PreEscaped<String>,
+    },
 }

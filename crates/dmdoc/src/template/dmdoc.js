@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // Index page tree browsing
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     var items = document.getElementsByClassName("index-tree");
     var nodes = [];
 
@@ -16,8 +16,8 @@ document.addEventListener("DOMContentLoaded", function() {
         var expander = document.createElement("span");
         expander.className = "expander";
         expander.textContent = "\u2795";
-        expander.addEventListener("click", function(node) {
-            return function(event) {
+        expander.addEventListener("click", function (node) {
+            return function (event) {
                 if (event.target.tagName.toLowerCase() == "a") {
                     return;
                 }
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var toggle = document.createElement("a");
         toggle.href = "#";
         toggle.appendChild(document.createTextNode("Toggle All"));
-        toggle.addEventListener("click", function(event) {
+        toggle.addEventListener("click", function (event) {
             event.preventDefault();
 
             var hidden = !nodes[1].node.hidden;

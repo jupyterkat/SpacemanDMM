@@ -3,21 +3,21 @@
 use std::collections::VecDeque;
 use std::ops::Range;
 
+use maud::PreEscaped;
 use pulldown_cmark::{self, BrokenLinkCallback, Event, HeadingLevel, Parser, Tag};
 
 pub fn render<'string>(
     markdown: &'string str,
     broken_link_callback: BrokenLinkCallback<'string, '_>,
-) -> String {
+) -> PreEscaped<String> {
     let mut buf = String::new();
     push_html(&mut buf, parser(markdown, broken_link_callback));
-    buf
+    PreEscaped(buf)
 }
 
 /// A rendered markdown document with the teaser identified.
-#[derive(Serialize)]
 pub struct DocBlock {
-    pub html: String,
+    pub html: PreEscaped<String>,
     pub has_description: bool,
     teaser: Range<usize>,
 }
@@ -56,8 +56,8 @@ impl DocBlock {
         )
     }
 
-    pub fn teaser(&self) -> &str {
-        &self.html[self.teaser.clone()]
+    pub fn teaser(&self) -> PreEscaped<&str> {
+        PreEscaped(&self.html.0[self.teaser.clone()])
     }
 }
 
@@ -96,7 +96,7 @@ fn parse_main(mut parser: std::iter::Peekable<Parser>) -> DocBlock {
     push_html(&mut html, parser);
     trim_right(&mut html);
     DocBlock {
-        html,
+        html: PreEscaped(html),
         teaser,
         has_description,
     }
@@ -149,9 +149,9 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for HeadingLinker<'a, I> {
             }
 
             self.output
-                .push_back(Event::Html(format!("</h{}>", heading).into()));
+                .push_back(Event::Html(format!("</{}>", heading).into()));
             return Some(Event::Html(
-                format!("<h{} id=\"{}\">", heading, slugify(&text_buf)).into(),
+                format!("<{} id=\"{}\">", heading, slugify(&text_buf)).into(),
             ));
         }
         original

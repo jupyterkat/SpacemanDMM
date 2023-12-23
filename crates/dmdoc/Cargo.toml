@@ -8,9 +8,7 @@ edition = "2021"
 [dependencies]
 dreammaker = { path = "../dreammaker" }
 pulldown-cmark = "0.9.3"
-tera = "1.19.1"
-serde = "1.0.193"
-serde_derive = "1.0.193"
+maud = "0.25.0"
 walkdir = "2.4.0"
 git2 = { version = "0.18.1", default-features = false }
 
