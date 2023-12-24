@@ -164,21 +164,14 @@ impl<'a> IconRenderer<'a> {
         canvas: &mut RgbaImage,
         frame: u32,
     ) {
-        for (dir_no, dir) in Self::ordered_dirs(icon_state.dirs).iter().enumerate() {
+        for dir in Self::ordered_dirs(icon_state.dirs).iter() {
             let frame_idx = self
                 .source
                 .metadata
                 .get_index_of_frame(icon_index, *dir, frame)
                 .unwrap();
             let frame_rect = self.source.rect_of_index(frame_idx);
-            _ = composite(
-                &self.source.image,
-                canvas,
-                (self.source.metadata.header.width * (dir_no as u32), 0),
-                frame_rect,
-                NO_TINT,
-                None,
-            );
+            _ = composite(&self.source.image, canvas, frame_rect, NO_TINT, None);
         }
     }
 

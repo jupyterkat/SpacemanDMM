@@ -140,7 +140,6 @@ use image::GenericImageView;
 pub fn composite(
     from: &image::RgbaImage,
     to: &mut image::RgbaImage,
-    pos_to: Coordinate,
     crop_from: Rect,
     tint_color: [u8; 4],
     transform: Option<[f32; 6]>,
@@ -179,38 +178,33 @@ pub fn composite(
         }
     }
 
-    for (x, y, from_pix) in image_copy.enumerate_pixels_mut() {
-        let Some(to_pix) = to.get_pixel_mut_checked(x + pos_to.0, y + pos_to.1) else {
-            tracing::error!(
-                "Pixel on \"to\" image out of bounds, tried {}:{}, image is {}:{}",
-                x + pos_to.0,
-                y + pos_to.1,
-                to.width(),
-                to.height()
-            );
-            continue;
-        };
+    image_copy
+        .pixels_mut()
+        .zip(to.pixels_mut())
+        .for_each(|(from_pix, to_pix)| {
+            //tint
+            from_pix
+                .0
+                .iter_mut()
+                .zip(tint_color.iter())
+                .for_each(|(channel, tint_channel)| *channel = mul255(*channel, *tint_channel));
+            let out_alpha = from_pix[ALPHA] + mul255(to_pix[ALPHA], 255 - from_pix[ALPHA]);
+            let from_alpha = from_pix[ALPHA];
+            let to_alpha = to_pix[ALPHA];
 
-        from_pix
-            .0
-            .iter_mut()
-            .enumerate()
-            .for_each(|(num, channel)| *channel = mul255(*channel, tint_color[num]));
-        let out_alpha = from_pix[ALPHA] + mul255(to_pix[ALPHA], 255 - from_pix[ALPHA]);
-
-        if out_alpha != 0 {
-            (0..3).for_each(|i| {
-                to_pix[i] = ((from_pix[i] as u32 * from_pix[ALPHA] as u32
-                    + to_pix[i] as u32 * to_pix[ALPHA] as u32 * (255 - from_pix[ALPHA] as u32)
-                        / 255)
-                    / out_alpha as u32) as u8;
-            })
-        } else {
-            (0..3).for_each(|i| to_pix[i] = 0)
-        }
-        to_pix[ALPHA] = out_alpha;
-    }
-
+            //actual blend
+            to_pix
+                .0
+                .iter_mut()
+                .zip(from_pix.0.iter())
+                .take(3)
+                .for_each(|(to, &from)| {
+                    *to = ((from as u32 * from_alpha as u32
+                        + *to as u32 * to_alpha as u32 * (255 - from_alpha as u32) / 255)
+                        / out_alpha as u32) as u8;
+                });
+            to_pix[ALPHA] = out_alpha;
+        });
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
         (x as u32 * y as u32 / 255) as u8
@@ -230,7 +224,6 @@ fn composite_test() {
     composite(
         &image,
         &mut map,
-        (0, 0),
         Rect {
             x: 0,
             y: 0,

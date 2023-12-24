@@ -169,14 +169,13 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> eyre::Result<image::Rgb
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
-            if let Some((corrected_loc, corrected_rect)) =
+            if let Some((_, corrected_rect)) =
                 clip((map_image.width(), map_image.height()), loc, rect)
             {
                 use eyre::Context;
                 if let Some(error) = composite(
                     &icon_file.image,
                     &mut map_image,
-                    corrected_loc,
                     corrected_rect,
                     sprite.color,
                     sprite.matrix,
