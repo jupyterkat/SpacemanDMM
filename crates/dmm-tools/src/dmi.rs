@@ -54,9 +54,21 @@ impl IconFile {
 
     pub fn from_bytes(buf: &[u8]) -> Result<IconFile> {
         let decoder = png::Decoder::new(buf);
-        let info = decoder.read_info()?;
-        let info = info.info();
-        let chunk = info
+        let mut reader = decoder.read_info()?;
+
+        fn get_buffer_size(info: &png::Info) -> usize {
+            let dimensions = info.size();
+            let total_pixs = dimensions.0 * dimensions.1;
+            let bytes_per_pixel = info.color_type.samples();
+            total_pixs as usize * bytes_per_pixel
+        }
+
+        let mut image: Vec<u8> = Vec::with_capacity(get_buffer_size(reader.info()));
+        //We only read one frame because dmis should only have one frame.
+        reader.next_frame(&mut image)?;
+
+        let chunk = reader
+            .info()
             .compressed_latin1_text
             .iter()
             .find(|chunk| chunk.keyword == "Description")
@@ -68,16 +80,75 @@ impl IconFile {
 
         let meta_text = chunk.get_text()?;
 
-        //does not need to be buffered, we're reading from memory by this point
-        let imagebuf =
-            image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
-                .decode()?;
+        let image = match (reader.info().color_type, reader.info().bit_depth) {
+            (png::ColorType::Grayscale, png::BitDepth::Eight) => image::DynamicImage::ImageLuma8(
+                image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+                    .unwrap(),
+            ),
+            (png::ColorType::Grayscale, png::BitDepth::Sixteen) => {
+                image::DynamicImage::ImageLuma16(
+                    image::ImageBuffer::from_raw(
+                        reader.info().width,
+                        reader.info().height,
+                        bytemuck::cast_vec(image),
+                    )
+                    .unwrap(),
+                )
+            }
+            (png::ColorType::GrayscaleAlpha, png::BitDepth::Eight) => {
+                image::DynamicImage::ImageLumaA8(
+                    image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+                        .unwrap(),
+                )
+            }
+            (png::ColorType::GrayscaleAlpha, png::BitDepth::Sixteen) => {
+                image::DynamicImage::ImageLumaA16(
+                    image::ImageBuffer::from_raw(
+                        reader.info().width,
+                        reader.info().height,
+                        bytemuck::cast_vec(image),
+                    )
+                    .unwrap(),
+                )
+            }
 
-        let imagebuf = imagebuf.into_rgba8();
+            (png::ColorType::Rgb, png::BitDepth::Eight) => image::DynamicImage::ImageRgb8(
+                image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+                    .unwrap(),
+            ),
+            (png::ColorType::Rgb, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgb16(
+                image::ImageBuffer::from_raw(
+                    reader.info().width,
+                    reader.info().height,
+                    bytemuck::cast_vec(image),
+                )
+                .unwrap(),
+            ),
+
+            (png::ColorType::Rgba, png::BitDepth::Eight) => image::DynamicImage::ImageRgba8(
+                image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+                    .unwrap(),
+            ),
+            (png::ColorType::Rgba, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgba16(
+                image::ImageBuffer::from_raw(
+                    reader.info().width,
+                    reader.info().height,
+                    bytemuck::cast_vec(image),
+                )
+                .unwrap(),
+            ),
+            (colortype, depth) => {
+                return Err(eyre::eyre!(
+                    "This image's color type {colortype:#?} with depth {depth:#?} is unsupported!"
+                ))
+            }
+        };
+
+        let image = image.to_rgba8();
 
         Ok(Self {
             metadata: tinydmi::parse(meta_text)?,
-            image: imagebuf,
+            image,
         })
     }
 

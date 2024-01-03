@@ -10,7 +10,7 @@ rand = "0.8.5"
 dreammaker = { path = "../dreammaker" }
 tinydmi = { path = "../tinydmi" }
 indexmap = "2.1.0"
-ahash = "0.8.6"
+ahash = "0.8.7"
 either = "1.9.0"
 typed-arena = "2.0.2"
 image = "0.24.7"

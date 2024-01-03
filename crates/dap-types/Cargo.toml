@@ -5,7 +5,7 @@ authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2021"
 
 [dependencies]
-serde = "1.0.193"
-serde_json = "1.0.108"
-serde_derive = "1.0.193"
-ahash = "0.8.6"
+serde = "1.0.194"
+serde_json = "1.0.110"
+serde_derive = "1.0.194"
+ahash = "0.8.7"
