@@ -2,7 +2,7 @@
 //!
 //! Includes re-exports from `dreammaker::dmi`.
 
-use std::{io::Read, path::Path};
+use std::{io::Read, path::Path, vec};
 
 use eyre::Result;
 
@@ -56,14 +56,7 @@ impl IconFile {
         let decoder = png::Decoder::new(buf);
         let mut reader = decoder.read_info()?;
 
-        fn get_buffer_size(info: &png::Info) -> usize {
-            let dimensions = info.size();
-            let total_pixs = dimensions.0 * dimensions.1;
-            let bytes_per_pixel = info.color_type.samples();
-            total_pixs as usize * bytes_per_pixel
-        }
-
-        let mut image: Vec<u8> = Vec::with_capacity(get_buffer_size(reader.info()));
+        let mut image: Vec<u8> = vec![0; reader.output_buffer_size()];
         //We only read one frame because dmis should only have one frame.
         reader.next_frame(&mut image)?;
 
