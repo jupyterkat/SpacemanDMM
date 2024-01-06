@@ -56,9 +56,14 @@ impl IconFile {
         let decoder = png::Decoder::new(buf);
         let mut reader = decoder.read_info()?;
 
-        let mut image: Vec<u8> = vec![0; reader.output_buffer_size()];
         //We only read one frame because dmis should only have one frame.
+        let mut image: Vec<u8> = vec![0; reader.output_buffer_size()];
         reader.next_frame(&mut image)?;
+
+        //Tricking the reader into reading until the end of the file for any other zTXT chunks remaining
+        let mut image_dummy: Vec<u8> = vec![0; reader.output_buffer_size()];
+        while let Ok(_) = reader.next_frame(&mut image_dummy) {}
+        drop(image_dummy);
 
         let chunk = reader
             .info()
