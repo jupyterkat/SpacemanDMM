@@ -257,6 +257,10 @@ pub fn composite(
             let from_alpha = from_pix[ALPHA];
             let to_alpha = to_pix[ALPHA];
 
+            if out_alpha == 0 {
+                return;
+            }
+
             //actual blend
             to_pix
                 .0
