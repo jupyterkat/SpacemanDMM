@@ -59,6 +59,7 @@ impl IconFile {
         //We only read one frame because dmis should only have one frame.
         let mut image: Vec<u8> = vec![0; reader.output_buffer_size()];
         reader.next_frame(&mut image)?;
+        reader.finish()?;
 
         let chunk = reader
             .info()
