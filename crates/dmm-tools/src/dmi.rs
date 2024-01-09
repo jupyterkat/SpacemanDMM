@@ -67,7 +67,7 @@ impl IconFile {
             .find(|chunk| chunk.keyword == "Description")
             .ok_or_else(|| {
                 eyre::eyre!(
-                    "Cannot find the description chunk, this might just be a regular png, boss!"
+                    "Cannot find the description chunk, make sure that a proper zTXT chunk exists, and is placed before the IDAT chunks!"
                 )
             })?;
 
