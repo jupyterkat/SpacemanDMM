@@ -9,18 +9,18 @@ ndarray = "0.15.6"
 rand = "0.8.5"
 dreammaker = { path = "../dreammaker" }
 tinydmi = { path = "../tinydmi" }
-indexmap = "2.1.0"
-ahash = "0.8.7"
-either = "1.9.0"
+indexmap = "2.2.3"
+ahash = "0.8.8"
+either = "1.10.0"
 typed-arena = "2.0.2"
 image = "0.24.8"
 png = "0.17.11"
-eyre = "0.6.11"
+eyre = "0.6.12"
 tracing = "0.1"
 imageproc = "0.23.0"
 
 [dependencies.bytemuck]
-version = "1.14.0"
+version = "1.14.3"
 features = ["derive"]
 
 [dependencies.gfx_core]
