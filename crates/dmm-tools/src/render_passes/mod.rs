@@ -143,6 +143,12 @@ pub const RENDER_PASSES: &[RenderPassInfo] = &[
         true
     ),
     pass!(
+        Offsets,
+        "offsets",
+        "Add offsets to atoms that need it, based on their direction.",
+        true
+    ),
+    pass!(
         Overlays,
         "overlays",
         "Add overlays and underlays to atoms which usually have them.",
@@ -335,8 +341,8 @@ impl RenderPass for HideInvisible {
 }
 
 #[derive(Default)]
-pub struct Overlays;
-impl RenderPass for Overlays {
+pub struct Offsets;
+impl RenderPass for Offsets {
     fn adjust_sprite<'a>(
         &self,
         atom: &Atom<'a>,
@@ -361,7 +367,11 @@ impl RenderPass for Overlays {
             }
         }
     }
+}
 
+#[derive(Default)]
+pub struct Overlays;
+impl RenderPass for Overlays {
     fn overlays<'a>(
         &self,
         atom: &Atom<'a>,
