@@ -10,13 +10,13 @@ builtins-proc-macro = { path = "../builtins-proc-macro" }
 bitflags = "2.4.2"
 termcolor = "1.4.1"
 ordered-float = "4.2.0"
-serde = { version = "1.0.196", features = ["derive"] }
-toml = "0.8.10"
+serde = { version = "1.0.197", features = ["derive"] }
+toml = "0.8.11"
 phf = { version = "0.11.2", features = ["macros"] }
 color_space = "0.5.3"
-ahash = "0.8.8"
-indexmap = "2.2.3"
+ahash = "0.8.11"
+indexmap = "2.2.5"
 get-size = { version = "0.1.4", features = ["derive"] }
 
 [dev-dependencies]
-walkdir = "2.4.0"
+walkdir = "2.5.0"

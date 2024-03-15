@@ -131,6 +131,19 @@ impl IconFile {
                 )
                 .unwrap(),
             ),
+
+            (png::ColorType::Indexed, png::BitDepth::Eight) => image::DynamicImage::ImageRgba8(
+                image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+                    .unwrap(),
+            ),
+            (png::ColorType::Indexed, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgba16(
+                image::ImageBuffer::from_raw(
+                    reader.info().width,
+                    reader.info().height,
+                    bytemuck::cast_vec(image),
+                )
+                .unwrap(),
+            ),
             (colortype, depth) => {
                 return Err(eyre::eyre!(
                     "This image's color type {colortype:#?} with depth {depth:#?} is unsupported!"
@@ -208,7 +221,7 @@ pub fn composite(
     to: &mut image::RgbaImage,
     crop_from: Rect,
     tint_color: [u8; 4],
-    transform: Option<[f32; 6]>,
+    //transform: Option<[f32; 6]>,
 ) -> Result<()> {
     if crop_from.x + crop_from.width > from.width()
         || crop_from.y + crop_from.height > from.height()
@@ -223,26 +236,26 @@ pub fn composite(
         .view(crop_from.x, crop_from.y, crop_from.width, crop_from.height)
         .to_image();
 
-    if let Some(thin) = transform {
-        if let Some(projection) = imageproc::geometric_transformations::Projection::from_matrix([
-            1.0 + thin[0],
-            thin[1],
-            thin[2],
-            thin[3],
-            1.0 + thin[4],
-            thin[5],
-            0.0,
-            0.0,
-            1.0,
-        ]) {
-            image_copy = imageproc::geometric_transformations::warp(
-                &image_copy,
-                &projection,
-                imageproc::geometric_transformations::Interpolation::Nearest,
-                image::Rgba::from([0, 0, 0, 0]),
-            )
-        }
-    }
+    // if let Some(thin) = transform {
+    //     if let Some(projection) = imageproc::geometric_transformations::Projection::from_matrix([
+    //         1.0 + thin[0],
+    //         thin[1],
+    //         thin[2],
+    //         thin[3],
+    //         1.0 + thin[4],
+    //         thin[5],
+    //         0.0,
+    //         0.0,
+    //         1.0,
+    //     ]) {
+    //         image_copy = imageproc::geometric_transformations::warp(
+    //             &image_copy,
+    //             &projection,
+    //             imageproc::geometric_transformations::Interpolation::Nearest,
+    //             image::Rgba::from([0, 0, 0, 0]),
+    //         )
+    //     }
+    // }
 
     image_copy
         .pixels_mut()
@@ -301,7 +314,7 @@ fn composite_test() {
             height: 2,
         },
         NO_TINT,
-        None,
+        //None,
     )
     .unwrap();
 

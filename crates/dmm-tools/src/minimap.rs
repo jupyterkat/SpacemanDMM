@@ -178,7 +178,7 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> eyre::Result<image::Rgb
                     &mut map_image,
                     corrected_rect,
                     sprite.color,
-                    sprite.matrix,
+                    //sprite.matrix,
                 )
                 .wrap_err_with(|| {
                     format!(

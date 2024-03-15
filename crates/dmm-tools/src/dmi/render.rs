@@ -1,7 +1,7 @@
 use super::*;
 use either::Either;
 use eyre::Result;
-use image::{ImageOutputFormat, RgbaImage};
+use image::{ImageFormat, RgbaImage};
 use tinydmi::prelude::{Dirs, State};
 
 /// Used to render an IconFile to a .gif/.png easily.
@@ -171,7 +171,12 @@ impl<'a> IconRenderer<'a> {
                 .get_index_of_frame(icon_index, *dir, frame)
                 .unwrap();
             let frame_rect = self.source.rect_of_index(frame_idx);
-            _ = composite(&self.source.image, canvas, frame_rect, NO_TINT, None);
+            _ = composite(
+                &self.source.image,
+                canvas,
+                frame_rect,
+                NO_TINT, /*None*/
+            );
         }
     }
 
@@ -233,7 +238,7 @@ impl<'a> IconRenderer<'a> {
 
         self.render_dirs(icon_state, icon_index, &mut canvas, 0);
 
-        canvas.write_to(&mut target, ImageOutputFormat::Png)?;
+        canvas.write_to(&mut target, ImageFormat::Png)?;
         Ok(())
     }
 }
