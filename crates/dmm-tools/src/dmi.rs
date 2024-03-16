@@ -132,18 +132,30 @@ impl IconFile {
                 .unwrap(),
             ),
 
-            (png::ColorType::Indexed, png::BitDepth::Eight) => image::DynamicImage::ImageRgba8(
-                image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image)
+            (png::ColorType::Indexed, png::BitDepth::Eight) => {
+                let pallete = reader.info().palette.as_ref().unwrap();
+
+                let actual_image: Vec<u8> = image
+                    .bytes()
+                    .map(|index| {
+                        pallete
+                            .chunks_exact(3)
+                            .nth(index.unwrap() as usize)
+                            .unwrap()
+                    })
+                    .flatten()
+                    .copied()
+                    .collect();
+
+                image::DynamicImage::ImageRgba8(
+                    image::ImageBuffer::from_raw(
+                        reader.info().width,
+                        reader.info().height,
+                        actual_image,
+                    )
                     .unwrap(),
-            ),
-            (png::ColorType::Indexed, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgba16(
-                image::ImageBuffer::from_raw(
-                    reader.info().width,
-                    reader.info().height,
-                    bytemuck::cast_vec(image),
                 )
-                .unwrap(),
-            ),
+            }
             (colortype, depth) => {
                 return Err(eyre::eyre!(
                     "This image's color type {colortype:#?} with depth {depth:#?} is unsupported!"

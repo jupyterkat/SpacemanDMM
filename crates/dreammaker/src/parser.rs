@@ -1526,7 +1526,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                         // moving the LHS also moves the RHS. This fails:
                         //   let a: Box<(NonCopy, NonCopy)>;
                         //   let (b, c) = *a;
-                        match { *rhs } {
+                        match *rhs {
                             Expression::BinaryOp {
                                 op: BinaryOp::To,
                                 lhs,
@@ -2322,7 +2322,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                     // warn against this mistake
                     if let Some(&Expression::BinaryOp {
                         op: BinaryOp::In, ..
-                    }) = args.get(0)
+                    }) = args.first()
                     {
                         self.error("bad `locate(X in Y)`, should be `locate(X) in Y`")
                             .set_severity(Severity::Warning)
