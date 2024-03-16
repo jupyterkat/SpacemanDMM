@@ -133,28 +133,51 @@ impl IconFile {
             ),
 
             (png::ColorType::Indexed, png::BitDepth::Eight) => {
+                // a pallete chunk is non-negotiable
                 let pallete = reader.info().palette.as_ref().unwrap();
+                let pallete: Vec<&[u8]> = pallete.chunks_exact(3).collect();
+                // a transparency chunk is negotiable
+                match reader.info().trns.as_ref() {
+                    Some(transparency) => {
+                        let actual_image: Vec<u8> = image
+                            .bytes()
+                            .map(|index| {
+                                let index = index.unwrap();
+                                let mut rgba = [0u8; 4];
+                                rgba[..3].copy_from_slice(pallete[index as usize]);
+                                rgba[3] = transparency[index as usize];
+                                rgba
+                            })
+                            .flatten()
+                            .collect();
 
-                let actual_image: Vec<u8> = image
-                    .bytes()
-                    .map(|index| {
-                        pallete
-                            .chunks_exact(3)
-                            .nth(index.unwrap() as usize)
-                            .unwrap()
-                    })
-                    .flatten()
-                    .copied()
-                    .collect();
+                        image::DynamicImage::ImageRgba8(
+                            image::ImageBuffer::from_raw(
+                                reader.info().width,
+                                reader.info().height,
+                                actual_image,
+                            )
+                            .unwrap(),
+                        )
+                    }
+                    None => {
+                        let actual_image: Vec<u8> = image
+                            .bytes()
+                            .map(|index| pallete[index.unwrap() as usize])
+                            .flatten()
+                            .copied()
+                            .collect();
 
-                image::DynamicImage::ImageRgba8(
-                    image::ImageBuffer::from_raw(
-                        reader.info().width,
-                        reader.info().height,
-                        actual_image,
-                    )
-                    .unwrap(),
-                )
+                        image::DynamicImage::ImageRgb8(
+                            image::ImageBuffer::from_raw(
+                                reader.info().width,
+                                reader.info().height,
+                                actual_image,
+                            )
+                            .unwrap(),
+                        )
+                    }
+                }
             }
             (colortype, depth) => {
                 return Err(eyre::eyre!(
