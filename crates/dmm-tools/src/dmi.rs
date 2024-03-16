@@ -145,7 +145,8 @@ impl IconFile {
                                 let index = index.unwrap();
                                 let mut rgba = [0u8; 4];
                                 rgba[..3].copy_from_slice(pallete[index as usize]);
-                                rgba[3] = transparency[index as usize];
+                                rgba[3] =
+                                    transparency.get(index as usize).copied().unwrap_or(u8::MAX);
                                 rgba
                             })
                             .flatten()
