@@ -164,7 +164,7 @@ impl<'a> IconRenderer<'a> {
         canvas: &mut RgbaImage,
         frame: u32,
     ) {
-        for dir in Self::ordered_dirs(icon_state.dirs).iter() {
+        for (idx, dir) in Self::ordered_dirs(icon_state.dirs).iter().enumerate() {
             let frame_idx = self
                 .source
                 .metadata
@@ -174,6 +174,7 @@ impl<'a> IconRenderer<'a> {
             _ = composite(
                 &self.source.image,
                 canvas,
+                (idx as u32 * self.source.metadata.header.width, 0),
                 frame_rect,
                 NO_TINT, /*None*/
             );

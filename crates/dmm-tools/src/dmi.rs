@@ -251,10 +251,11 @@ const GREEN: usize = 1;
 const BLUE: usize = 2;
 const ALPHA: usize = 3;
 
-use image::GenericImageView;
+use image::{GenericImage, GenericImageView};
 pub fn composite(
     from: &image::RgbaImage,
     to: &mut image::RgbaImage,
+    to_loc: (u32, u32),
     crop_from: Rect,
     tint_color: [u8; 4],
     //transform: Option<[f32; 6]>,
@@ -292,11 +293,16 @@ pub fn composite(
     //         )
     //     }
     // }
+    let mut new_to_pix = image::ImageBuffer::new(crop_from.width, crop_from.height);
 
     image_copy
         .pixels_mut()
-        .zip(to.pixels_mut())
-        .for_each(|(from_pix, to_pix)| {
+        .zip(
+            to.sub_image(to_loc.0, to_loc.1, crop_from.width, crop_from.height)
+                .pixels(),
+        )
+        .zip(new_to_pix.pixels_mut())
+        .for_each(|((from_pix, (_, _, mut to_pix)), to_pix_new)| {
             //tint
             from_pix
                 .0
@@ -308,6 +314,7 @@ pub fn composite(
             let to_alpha = to_pix[ALPHA];
 
             if out_alpha == 0 {
+                *to_pix_new = to_pix;
                 return;
             }
 
@@ -323,7 +330,13 @@ pub fn composite(
                         / out_alpha as u32) as u8;
                 });
             to_pix[ALPHA] = out_alpha;
+            *to_pix_new = to_pix;
         });
+
+    to.sub_image(to_loc.0, to_loc.1, crop_from.width, crop_from.height)
+        .copy_from(&new_to_pix, 0, 0)
+        .unwrap();
+
     #[inline]
     fn mul255(x: u8, y: u8) -> u8 {
         (x as u32 * y as u32 / 255) as u8
@@ -343,6 +356,7 @@ fn composite_test() {
     composite(
         &image,
         &mut map,
+        (0, 0),
         Rect {
             x: 0,
             y: 0,

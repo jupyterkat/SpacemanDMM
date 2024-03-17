@@ -169,13 +169,14 @@ pub fn generate(ctx: Context, icon_cache: &IconCache) -> eyre::Result<image::Rgb
                 ((loc.1 + 1 - min_y as u32) * TILE_SIZE) as i32 - pixel_y,
             );
 
-            if let Some((_, corrected_rect)) =
+            if let Some((maploc, corrected_rect)) =
                 clip((map_image.width(), map_image.height()), loc, rect)
             {
                 use eyre::Context;
                 if let Some(error) = composite(
                     &icon_file.image,
                     &mut map_image,
+                    maploc,
                     corrected_rect,
                     sprite.color,
                     //sprite.matrix,
@@ -211,19 +212,15 @@ use super::dmi;
 // OOB handling
 fn clip(
     (img_width, img_height): (u32, u32),
-    (mut loc_x, mut loc_y): (i32, i32),
+    (loc_x, loc_y): (i32, i32),
     mut rect: dmi::Rect,
 ) -> Option<(dmi::Coordinate, dmi::Rect)> {
-    if loc_x < 0 {
-        loc_x = 0;
+    if loc_x < 0 || loc_y < 0 {
+        return None;
     }
 
     while loc_x as u32 + rect.width > img_width {
         rect.width = rect.width.checked_sub(1)?;
-    }
-
-    if loc_y < 0 {
-        loc_y = 0;
     }
 
     while loc_y as u32 + rect.height > img_height {
