@@ -132,7 +132,7 @@ impl IconFile {
                 .unwrap(),
             ),
 
-            (png::ColorType::Indexed, png::BitDepth::Eight) => {
+            (png::ColorType::Indexed, _) => {
                 // a pallete chunk is non-negotiable
                 let pallete = reader.info().palette.as_ref().unwrap();
                 let pallete: Vec<&[u8]> = pallete.chunks_exact(3).collect();
