@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 dreammaker = { path = "../dreammaker" }
-pulldown-cmark = "0.11.0"
+pulldown-cmark = "0.9.6"
 maud = "0.26.0"
 walkdir = "2.5.0"
 git2 = { version = "0.18.3", default-features = false }
