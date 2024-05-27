@@ -2,7 +2,8 @@
 //!
 //! Includes re-exports from `dreammaker::dmi`.
 
-use std::{io::Read, path::Path, vec};
+use bitvec::prelude::*;
+use std::{io::Read, path::Path};
 
 use eyre::Result;
 
@@ -132,7 +133,7 @@ impl IconFile {
                 .unwrap(),
             ),
 
-            (png::ColorType::Indexed, png::BitDepth::Eight) => {
+            (png::ColorType::Indexed, bit_depth) => {
                 // a pallete chunk is non-negotiable
                 let pallete = reader.info().palette.as_ref().unwrap();
                 let pallete: Vec<&[u8]> = pallete.chunks_exact(3).collect();
@@ -141,14 +142,42 @@ impl IconFile {
                     Some(transparency) => {
                         let actual_image: Vec<u8> = image
                             .bytes()
-                            .map(|index| {
-                                let index = index.unwrap();
-                                let mut rgba = [0u8; 4];
-                                rgba[..3].copy_from_slice(pallete[index as usize]);
-                                rgba[3] =
-                                    transparency.get(index as usize).copied().unwrap_or(u8::MAX);
-                                rgba
+                            .map(|index| match bit_depth {
+                                png::BitDepth::Eight => {
+                                    let index = index.unwrap();
+                                    let mut rgba = [0u8; 4];
+                                    rgba[..3].copy_from_slice(pallete[index as usize]);
+                                    rgba[3] = transparency
+                                        .get(index as usize)
+                                        .copied()
+                                        .unwrap_or(u8::MAX);
+                                    vec![rgba]
+                                }
+                                _ => index
+                                    .unwrap()
+                                    .view_bits::<Lsb0>()
+                                    .chunks_exact(bit_depth as u8 as usize)
+                                    .map(|bits| {
+                                        bits.iter().enumerate().fold(0u8, |acc, (index, item)| {
+                                            if *item {
+                                                acc & (1 << index)
+                                            } else {
+                                                acc
+                                            }
+                                        })
+                                    })
+                                    .map(|index| {
+                                        let mut rgba = [0u8; 4];
+                                        rgba[..3].copy_from_slice(pallete[index as usize]);
+                                        rgba[3] = transparency
+                                            .get(index as usize)
+                                            .copied()
+                                            .unwrap_or(u8::MAX);
+                                        rgba
+                                    })
+                                    .collect(),
                             })
+                            .flatten()
                             .flatten()
                             .collect();
 
