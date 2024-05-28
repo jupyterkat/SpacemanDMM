@@ -2,7 +2,6 @@
 //!
 //! Includes re-exports from `dreammaker::dmi`.
 
-use bitvec::prelude::*;
 use std::{io::Read, path::Path};
 
 use eyre::Result;
@@ -75,7 +74,10 @@ impl IconFile {
 
         let meta_text = chunk.get_text()?;
 
-        let image = handle_image_colors(reader, image)?;
+        //let image = handle_image_colors(reader, image)?;
+        let image =
+            image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
+                .decode()?;
         //it has to be a rgba8 image
         let image = image.to_rgba8();
 
@@ -231,139 +233,6 @@ pub fn composite(
         (x as u32 * y as u32 / 255) as u8
     }
     Ok(())
-}
-
-fn handle_image_colors(reader: png::Reader<&[u8]>, image: Vec<u8>) -> Result<image::DynamicImage> {
-    Ok(match (reader.info().color_type, reader.info().bit_depth) {
-        (png::ColorType::Grayscale, png::BitDepth::Eight) => image::DynamicImage::ImageLuma8(
-            image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image).unwrap(),
-        ),
-        (png::ColorType::Grayscale, png::BitDepth::Sixteen) => image::DynamicImage::ImageLuma16(
-            image::ImageBuffer::from_raw(
-                reader.info().width,
-                reader.info().height,
-                bytemuck::cast_vec(image),
-            )
-            .unwrap(),
-        ),
-        (png::ColorType::GrayscaleAlpha, png::BitDepth::Eight) => image::DynamicImage::ImageLumaA8(
-            image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image).unwrap(),
-        ),
-        (png::ColorType::GrayscaleAlpha, png::BitDepth::Sixteen) => {
-            image::DynamicImage::ImageLumaA16(
-                image::ImageBuffer::from_raw(
-                    reader.info().width,
-                    reader.info().height,
-                    bytemuck::cast_vec(image),
-                )
-                .unwrap(),
-            )
-        }
-
-        (png::ColorType::Rgb, png::BitDepth::Eight) => image::DynamicImage::ImageRgb8(
-            image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image).unwrap(),
-        ),
-        (png::ColorType::Rgb, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgb16(
-            image::ImageBuffer::from_raw(
-                reader.info().width,
-                reader.info().height,
-                bytemuck::cast_vec(image),
-            )
-            .unwrap(),
-        ),
-
-        (png::ColorType::Rgba, png::BitDepth::Eight) => image::DynamicImage::ImageRgba8(
-            image::ImageBuffer::from_raw(reader.info().width, reader.info().height, image).unwrap(),
-        ),
-        (png::ColorType::Rgba, png::BitDepth::Sixteen) => image::DynamicImage::ImageRgba16(
-            image::ImageBuffer::from_raw(
-                reader.info().width,
-                reader.info().height,
-                bytemuck::cast_vec(image),
-            )
-            .unwrap(),
-        ),
-
-        (png::ColorType::Indexed, bit_depth) => {
-            // a pallete chunk is non-negotiable
-            let pallete = reader.info().palette.as_ref().unwrap();
-            let pallete: Vec<&[u8]> = pallete.chunks_exact(3).collect();
-            // a transparency chunk is negotiable
-            match reader.info().trns.as_ref() {
-                Some(transparency) => {
-                    let actual_image: Vec<u8> = image
-                        .bytes()
-                        .map(|index| match bit_depth {
-                            png::BitDepth::Eight => {
-                                let index = index.unwrap();
-                                let mut rgba = [0u8; 4];
-                                rgba[..3].copy_from_slice(pallete[index as usize]);
-                                rgba[3] =
-                                    transparency.get(index as usize).copied().unwrap_or(u8::MAX);
-                                vec![rgba]
-                            }
-                            _ => index
-                                .unwrap()
-                                .view_bits::<Lsb0>()
-                                .chunks_exact(bit_depth as u8 as usize)
-                                .map(|bits| {
-                                    bits.iter().enumerate().fold(0u8, |acc, (index, item)| {
-                                        if *item {
-                                            acc & (1 << index)
-                                        } else {
-                                            acc
-                                        }
-                                    })
-                                })
-                                .map(|index| {
-                                    let mut rgba = [0u8; 4];
-                                    rgba[..3].copy_from_slice(pallete[index as usize]);
-                                    rgba[3] = transparency
-                                        .get(index as usize)
-                                        .copied()
-                                        .unwrap_or(u8::MAX);
-                                    rgba
-                                })
-                                .collect(),
-                        })
-                        .flatten()
-                        .flatten()
-                        .collect();
-
-                    image::DynamicImage::ImageRgba8(
-                        image::ImageBuffer::from_raw(
-                            reader.info().width,
-                            reader.info().height,
-                            actual_image,
-                        )
-                        .unwrap(),
-                    )
-                }
-                None => {
-                    let actual_image: Vec<u8> = image
-                        .bytes()
-                        .map(|index| pallete[index.unwrap() as usize])
-                        .flatten()
-                        .copied()
-                        .collect();
-
-                    image::DynamicImage::ImageRgb8(
-                        image::ImageBuffer::from_raw(
-                            reader.info().width,
-                            reader.info().height,
-                            actual_image,
-                        )
-                        .unwrap(),
-                    )
-                }
-            }
-        }
-        (colortype, depth) => {
-            return Err(eyre::eyre!(
-                "This image's color type {colortype:#?} with depth {depth:#?} is unsupported!"
-            ))
-        }
-    })
 }
 
 #[test]

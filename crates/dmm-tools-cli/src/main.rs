@@ -27,6 +27,9 @@ use ahash::RandomState;
 // Main driver
 
 fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::TRACE)
+        .init();
     let opt = Opt::parse();
     let mut context = Context::default();
     context
