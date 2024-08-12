@@ -1,4 +1,4 @@
-#![cfg(auxtools_bundle)]
+#![cfg(feature = "auxtools_bundle")]
 use std::fs::File;
 use std::io::{Result, Write};
 use std::path::{Path, PathBuf};

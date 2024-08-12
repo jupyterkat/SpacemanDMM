@@ -507,6 +507,7 @@ pub(crate) fn evaluate_all(context: &Context, tree: &mut ObjectTree) {
     }
 }
 
+#[allow(dead_code)]
 enum ConstLookup {
     Found(TreePath, Constant),
     Continue(Option<NodeIndex>),

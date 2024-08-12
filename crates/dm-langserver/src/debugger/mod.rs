@@ -455,7 +455,7 @@ handle_request! {
                         }
                     }
 
-                    #[cfg(extools_bundle)] {
+                    #[cfg(feature = "extools_bundle")] {
                         if extools_dll.is_none() {
                             extools_dll = Some(self::extools_bundle::extract()?);
                         }
@@ -481,7 +481,7 @@ handle_request! {
                         }
                     }
 
-                    #[cfg(auxtools_bundle)] {
+                    #[cfg(feature = "auxtools_bundle")] {
                         if debug_server_dll.is_none() {
                             debug_server_dll = Some(self::auxtools_bundle::extract()?);
                         }

@@ -1,4 +1,4 @@
-#![cfg(extools_bundle)]
+#![cfg(feature = "extools_bundle")]
 use std::fs::File;
 use std::io::{Result, Write};
 use std::path::{Path, PathBuf};

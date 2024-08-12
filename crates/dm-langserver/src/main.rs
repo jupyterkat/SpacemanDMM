@@ -63,11 +63,11 @@ fn main() {
         "{}",
         include_str!(concat!(env!("OUT_DIR"), "/build-info.txt"))
     );
-    #[cfg(extools_bundle)]
+    #[cfg(feature = "extools_bundle")]
     {
         eprintln!("extools commit: {}", env!("EXTOOLS_COMMIT_HASH"));
     }
-    #[cfg(auxtools_bundle)]
+    #[cfg(feature = "auxtools_bundle")]
     {
         eprintln!("auxtools commit: {}", env!("AUXTOOLS_COMMIT_HASH"));
     }

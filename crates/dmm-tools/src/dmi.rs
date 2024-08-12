@@ -76,7 +76,7 @@ impl IconFile {
 
         //let image = handle_image_colors(reader, image)?;
         let image =
-            image::io::Reader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
+            image::ImageReader::with_format(std::io::Cursor::new(buf), image::ImageFormat::Png)
                 .decode()?;
         //it has to be a rgba8 image
         let image = image.to_rgba8();
