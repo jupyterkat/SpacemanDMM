@@ -4,8 +4,8 @@ use nom::{
     character::complete::{digit1, none_of},
     combinator::{map, map_parser, recognize},
     multi::fold_many0,
-    sequence::{delimited, tuple},
-    IResult,
+    sequence::delimited,
+    IResult, Parser,
 };
 
 use super::polyfill::separated_list1_nonoptional;
@@ -31,7 +31,8 @@ pub fn string(input: &str) -> IResult<&str, String> {
             string
         }),
         quote,
-    )(input)
+    )
+    .parse(input)
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -43,32 +44,34 @@ pub enum Value {
 }
 
 pub fn rec_float(input: &str) -> IResult<&str, &str> {
-    recognize(tuple((digit1, decimal, digit1)))(input)
+    recognize((digit1, decimal, digit1)).parse(input)
 }
 
 pub fn atom_float(input: &str) -> IResult<&str, Value> {
     map(map_parser(rec_float, nom::number::complete::float), |f| {
         Value::Float(f)
-    })(input)
+    })
+    .parse(input)
 }
 
 pub fn atom_u32(input: &str) -> IResult<&str, Value> {
-    map(nom::character::complete::u32, Value::Int)(input)
+    map(nom::character::complete::u32, Value::Int).parse(input)
 }
 
 pub fn atom_string(input: &str) -> IResult<&str, Value> {
-    map(string, Value::String)(input)
+    map(string, Value::String).parse(input)
 }
 
 pub fn atom_list(input: &str) -> IResult<&str, Value> {
     map(
         separated_list1_nonoptional(tag(","), nom::number::complete::float),
         Value::List,
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn atom(input: &str) -> IResult<&str, Value> {
-    alt((atom_list, atom_float, atom_u32, atom_string))(input)
+    alt((atom_list, atom_float, atom_u32, atom_string)).parse(input)
 }
 
 #[cfg(test)]

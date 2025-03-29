@@ -6,7 +6,7 @@ use nom::{
     combinator::{map_res, verify},
     multi::many1,
     sequence::{delimited, pair, terminated},
-    IResult,
+    IResult, Parser,
 };
 
 use super::{
@@ -129,7 +129,8 @@ pub fn state(input: &str) -> IResult<&str, State> {
             many1(delimited(space1, key_value, newline)),
         ),
         |(state_name, properties)| State::try_from((state_name, properties)),
-    )(input)
+    )
+    .parse(input)
 }
 
 #[cfg(test)]

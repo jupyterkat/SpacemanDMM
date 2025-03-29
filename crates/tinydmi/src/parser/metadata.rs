@@ -8,7 +8,7 @@ use nom::{
     combinator::{all_consuming, map_res, verify},
     multi::{many0, many1},
     sequence::{delimited, pair, terminated},
-    IResult,
+    IResult, Parser,
 };
 
 use crate::prelude::{Dir, Dirs};
@@ -20,11 +20,11 @@ use super::{
 };
 
 pub fn begin_dmi(input: &str) -> IResult<&str, &str> {
-    terminated(tag("# BEGIN DMI"), newline)(input)
+    terminated(tag("# BEGIN DMI"), newline).parse(input)
 }
 
 pub fn end_dmi(input: &str) -> IResult<&str, &str> {
-    terminated(tag("# END DMI"), multispace0)(input)
+    terminated(tag("# END DMI"), multispace0).parse(input)
 }
 
 #[derive(Debug)]
@@ -94,7 +94,8 @@ pub fn header(input: &str) -> IResult<&str, Header> {
             many1(delimited(space1, key_value, newline)),
         ),
         |(version, properties)| Header::try_from((version, properties)),
-    )(input)
+    )
+    .parse(input)
 }
 
 #[derive(Debug)]
@@ -214,7 +215,7 @@ impl<'a> From<(usize, &'a str)> for IconIndex<'a> {
 
 pub fn metadata(input: &str) -> IResult<&str, Metadata> {
     let (tail, (header, states)) =
-        all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi))(input)?;
+        all_consuming(delimited(begin_dmi, pair(header, many0(state)), end_dmi)).parse(input)?;
     let mut state_map: IndexMap<String, Vec<(IconLocation, State)>, ahash::RandomState> =
         Default::default();
 

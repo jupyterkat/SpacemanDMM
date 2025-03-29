@@ -1,50 +1,86 @@
 use nom::{
     error::{ErrorKind, ParseError},
-    Err, IResult, InputLength, Parser,
+    Check, Err, Input, Mode, OutputM, OutputMode, PResult, Parser,
 };
 
 /// it's [`nom::separated_list1`] except it fails if the first separator isn't found
-pub fn separated_list1_nonoptional<I, O, O2, E, F, G>(
-    mut sep: G,
-    mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list1_nonoptional<I, E, F, G>(
+    separator: G,
+    parser: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
 where
-    I: Clone + InputLength,
-    F: Parser<I, O, E>,
-    G: Parser<I, O2, E>,
+    I: Clone + Input,
+    F: Parser<I, Error = E>,
+    G: Parser<I, Error = E>,
     E: ParseError<I>,
 {
-    move |mut i: I| {
-        let mut res = Vec::new();
+    SeparatedList1 { parser, separator }
+}
 
-        // Parse the first element
-        match f.parse(i.clone()) {
+struct SeparatedList1<F, G> {
+    parser: F,
+    separator: G,
+}
+
+impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList1<F, G>
+where
+    I: Clone + Input,
+    F: Parser<I, Error = E>,
+    G: Parser<I, Error = E>,
+{
+    type Output = Vec<<F as Parser<I>>::Output>;
+    type Error = <F as Parser<I>>::Error;
+    fn process<OM: OutputMode>(&mut self, mut i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+        let mut res = OM::Output::bind(Vec::new);
+
+        match self.parser.process::<OM>(i.clone()) {
             Err(e) => return Err(e),
             Ok((i1, o)) => {
-                res.push(o);
+                res = OM::Output::combine(res, o, |mut res, o| {
+                    res.push(o);
+                    res
+                });
                 i = i1;
             }
         }
 
-        // MUST have the first separator
-        sep.parse(i.clone())?;
-
         loop {
             let len = i.input_len();
-            match sep.parse(i.clone()) {
-                Err(Err::Error(_)) => return Ok((i, res)),
-                Err(e) => return Err(e),
-                Ok((i1, _)) => {
-                    // infinite loop check: the parser must always consume
-                    if i1.input_len() == len {
-                        return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
-                    }
+            match self
+                .separator
+                .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
+            {
+                Err(Err::Error(_)) => {
+                    return Err(Err::Error(OM::Error::bind(|| {
+                        <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                    })))
+                }
 
-                    match f.parse(i1.clone()) {
+                Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+                Ok((i1, _)) => {
+                    match self
+                        .parser
+                        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
+                    {
                         Err(Err::Error(_)) => return Ok((i, res)),
-                        Err(e) => return Err(e),
+                        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
                         Ok((i2, o)) => {
-                            res.push(o);
+                            // infinite loop check: the parser must always consume
+                            if i2.input_len() == len {
+                                return Err(Err::Error(OM::Error::bind(|| {
+                                    <F as Parser<I>>::Error::from_error_kind(
+                                        i,
+                                        ErrorKind::SeparatedList,
+                                    )
+                                })));
+                            }
+
+                            res = OM::Output::combine(res, o, |mut res, o| {
+                                res.push(o);
+                                res
+                            });
                             i = i2;
                         }
                     }

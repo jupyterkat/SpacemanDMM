@@ -2,7 +2,7 @@ use super::values::*;
 use eyre::format_err;
 use nom::{
     bytes::complete::tag, character::complete::alpha1, combinator::map_res,
-    sequence::separated_pair, IResult,
+    sequence::separated_pair, IResult, Parser,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -117,7 +117,8 @@ pub fn key_value(input: &str) -> IResult<&str, KeyValue> {
             (Key::Unk(key), atom) => Ok(KeyValue::Unk(key, atom)),
             _ => Err(format_err!("Unable to find matching key/value")),
         },
-    )(input)
+    )
+    .parse(input)
 }
 
 #[cfg(test)]

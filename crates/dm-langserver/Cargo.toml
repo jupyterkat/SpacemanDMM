@@ -5,10 +5,10 @@ authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2021"
 
 [dependencies]
-url = "2.5.2"
-serde = "1.0.206"
-serde_json = "1.0.124"
-serde_derive = "1.0.206"
+url = "2.5.4"
+serde = "1.0.219"
+serde_json = "1.0.140"
+serde_derive = "1.0.219"
 bincode = "1.3.3"
 jsonrpc-core = "18.0.0"
 lsp-types = "0.95.0"
@@ -16,8 +16,8 @@ dap-types = { path = "../dap-types" }
 dreammaker = { path = "../dreammaker" }
 dreamchecker = { path = "../dreamchecker" }
 interval-tree = { path = "../interval-tree" }
-libc = "0.2.155"
-regex = "1.10.6"
+libc = "0.2.171"
+regex = "1.11.1"
 lazy_static = "1.5"
 ahash = "0.8.11"
 
@@ -26,5 +26,5 @@ auxtools_bundle = []
 extools_bundle = []
 
 [build-dependencies]
-chrono = "0.4.38"
-git2 = { version = "0.19.0", default-features = false }
+chrono = "0.4.40"
+git2 = { version = "0.20.1", default-features = false }
