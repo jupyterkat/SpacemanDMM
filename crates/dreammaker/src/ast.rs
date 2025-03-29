@@ -41,7 +41,7 @@ impl UnaryOp {
             expr: &'a T,
         }
 
-        impl<'a, T: fmt::Display + ?Sized> fmt::Display for Around<'a, T> {
+        impl<T: fmt::Display + ?Sized> fmt::Display for Around<'_, T> {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 use self::UnaryOp::*;
                 match self.op {
@@ -741,7 +741,7 @@ impl fmt::Debug for Ident2 {
 
 impl GetSize for Ident2 {
     fn get_heap_size(&self) -> usize {
-        self.inner.as_bytes().len()
+        self.inner.len()
     }
 }
 
@@ -771,7 +771,7 @@ pub type TreePath = Box<[Ident]>;
 
 pub struct FormatTreePath<'a, T>(pub &'a [T]);
 
-impl<'a, T: fmt::Display> fmt::Display for FormatTreePath<'a, T> {
+impl<T: fmt::Display> fmt::Display for FormatTreePath<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for each in self.0.iter() {
             write!(f, "/{}", each)?;
@@ -792,7 +792,7 @@ pub fn make_typepath(segments: Vec<String>) -> TypePath {
 
 pub struct FormatTypePath<'a>(pub &'a [(PathOp, Ident)]);
 
-impl<'a> fmt::Display for FormatTypePath<'a> {
+impl fmt::Display for FormatTypePath<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for each in self.0.iter() {
             write!(f, "{}{}", each.0, each.1)?;
@@ -939,9 +939,7 @@ impl Expression {
     pub fn is_truthy(&self) -> Option<bool> {
         match self {
             Expression::Base { term, follow } => {
-                let Some(mut truthy) = term.elem.is_truthy() else {
-                    return None;
-                };
+                let mut truthy = term.elem.is_truthy()?;
                 for follow in follow.iter() {
                     match follow.elem {
                         Follow::Unary(UnaryOp::Not) => truthy = !truthy,
@@ -961,10 +959,10 @@ impl Expression {
             }
             Expression::AssignOp { op, lhs: _, rhs } => {
                 if let AssignOp::Assign = op {
-                    return match rhs.as_term() {
+                    match rhs.as_term() {
                         Some(term) => term.is_truthy(),
                         _ => None,
-                    };
+                    }
                 } else {
                     None
                 }

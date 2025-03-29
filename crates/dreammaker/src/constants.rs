@@ -336,7 +336,7 @@ impl ops::Not for Constant {
     }
 }
 
-impl<'a> ops::Not for &'a Constant {
+impl ops::Not for &Constant {
     type Output = Constant;
 
     fn not(self) -> Constant {
@@ -487,7 +487,7 @@ pub(crate) fn evaluate_all(context: &Context, tree: &mut ObjectTree) {
     for ty in tree.node_indices() {
         let keys: Vec<String> = tree[ty].vars.keys().cloned().collect();
         for key in keys {
-            if !tree[ty].get_var_declaration(&key, tree).map_or(true, |x| {
+            if !tree[ty].get_var_declaration(&key, tree).is_none_or(|x| {
                 x.var_type.is_const_evaluable()
                     && (x.var_type.flags.is_const() || ty != NodeIndex::new(0))
             }) {
@@ -592,13 +592,13 @@ struct ConstantFolder<'a> {
     ty: NodeIndex,
 }
 
-impl<'a> HasLocation for ConstantFolder<'a> {
+impl HasLocation for ConstantFolder<'_> {
     fn location(&self) -> Location {
         self.location
     }
 }
 
-impl<'a> ConstantFolder<'a> {
+impl ConstantFolder<'_> {
     fn expr(
         &mut self,
         expression: Expression,

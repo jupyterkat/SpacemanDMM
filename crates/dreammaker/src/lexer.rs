@@ -463,7 +463,7 @@ impl fmt::Display for Token {
 /// Assumes that escapes within the string have NOT been parsed
 pub struct Quote<'a>(pub &'a str);
 
-impl<'a> fmt::Display for Quote<'a> {
+impl fmt::Display for Quote<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = self.0;
         if s.contains("\"}") {
@@ -688,7 +688,7 @@ impl<'a> LocationTracker<'a> {
     }
 }
 
-impl<'a> fmt::Debug for LocationTracker<'a> {
+impl fmt::Debug for LocationTracker<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("LocationTracker")
             // inner omitted
@@ -699,7 +699,7 @@ impl<'a> fmt::Debug for LocationTracker<'a> {
     }
 }
 
-impl<'a> Iterator for LocationTracker<'a> {
+impl Iterator for LocationTracker<'_> {
     type Item = u8;
 
     fn next(&mut self) -> Option<u8> {
@@ -741,7 +741,7 @@ pub struct Lexer<'ctx> {
     interp_stack: Vec<Interpolation>,
 }
 
-impl<'ctx> fmt::Debug for Lexer<'ctx> {
+impl fmt::Debug for Lexer<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Lexer")
             .field("context", self.context)
@@ -755,7 +755,7 @@ impl<'ctx> fmt::Debug for Lexer<'ctx> {
     }
 }
 
-impl<'ctx> HasLocation for Lexer<'ctx> {
+impl HasLocation for Lexer<'_> {
     #[inline]
     fn location(&self) -> Location {
         self.input.location
@@ -1294,7 +1294,7 @@ impl<'ctx> Lexer<'ctx> {
     }
 }
 
-impl<'ctx> Iterator for Lexer<'ctx> {
+impl Iterator for Lexer<'_> {
     type Item = LocatedToken;
 
     fn next(&mut self) -> Option<LocatedToken> {

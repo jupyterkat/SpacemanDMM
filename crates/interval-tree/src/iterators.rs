@@ -96,7 +96,7 @@ impl<'a, K: Ord + Clone, V> Iterator for RangePairIter<'a, K, V> {
     }
 }
 
-impl<'a, K: Clone, V> Clone for RangePairIter<'a, K, V> {
+impl<K: Clone, V> Clone for RangePairIter<'_, K, V> {
     fn clone(&self) -> Self {
         RangePairIter {
             start: self.start.clone(),
@@ -154,10 +154,7 @@ impl<K: Clone, V> Iterator for IntoIter<K, V> {
             }
 
             if self.current.is_none() {
-                let mut node = match self.stack.pop() {
-                    Some(node) => node,
-                    None => return None,
-                };
+                let mut node = self.stack.pop()?;
                 self.push_node(node.right.take());
                 self.current = Some((node.key, node.data.into_iter()));
             }

@@ -201,7 +201,7 @@ where
     }
 }
 
-impl<'ctx, I> Iterator for IndentProcessor<'ctx, I>
+impl<I> Iterator for IndentProcessor<'_, I>
 where
     I: Iterator<Item = LocatedToken>,
 {

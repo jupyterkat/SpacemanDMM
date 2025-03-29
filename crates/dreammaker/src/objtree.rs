@@ -469,34 +469,34 @@ impl<'a> TypeRef<'a> {
     }
 }
 
-impl<'a> std::ops::Deref for TypeRef<'a> {
+impl std::ops::Deref for TypeRef<'_> {
     type Target = Type;
     fn deref(&self) -> &Type {
         self.get()
     }
 }
 
-impl<'a> fmt::Debug for TypeRef<'a> {
+impl fmt::Debug for TypeRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}({})", self.path, self.idx.index())
     }
 }
 
-impl<'a> fmt::Display for TypeRef<'a> {
+impl fmt::Display for TypeRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.pretty_path())
     }
 }
 
-impl<'a> std::cmp::PartialEq for TypeRef<'a> {
+impl std::cmp::PartialEq for TypeRef<'_> {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.tree, other.tree) && self.idx == other.idx
     }
 }
 
-impl<'a> std::cmp::Eq for TypeRef<'a> {}
+impl std::cmp::Eq for TypeRef<'_> {}
 
-impl<'a> std::hash::Hash for TypeRef<'a> {
+impl std::hash::Hash for TypeRef<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.idx.hash(state);
     }
@@ -620,14 +620,14 @@ impl<'a> ProcRef<'a> {
     }
 }
 
-impl<'a> std::ops::Deref for ProcRef<'a> {
+impl std::ops::Deref for ProcRef<'_> {
     type Target = ProcValue;
     fn deref(&self) -> &ProcValue {
         self.get()
     }
 }
 
-impl<'a> fmt::Debug for ProcRef<'a> {
+impl fmt::Debug for ProcRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -640,7 +640,7 @@ impl<'a> fmt::Debug for ProcRef<'a> {
     }
 }
 
-impl<'a> fmt::Display for ProcRef<'a> {
+impl fmt::Display for ProcRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}/proc/{}", self.ty.path, self.name)?;
         if self.list.len() > 1 {
@@ -656,9 +656,9 @@ impl<'a> std::cmp::PartialEq for ProcRef<'a> {
     }
 }
 
-impl<'a> std::cmp::Eq for ProcRef<'a> {}
+impl std::cmp::Eq for ProcRef<'_> {}
 
-impl<'a> std::hash::Hash for ProcRef<'a> {
+impl std::hash::Hash for ProcRef<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.ty.hash(state);
         self.name.hash(state);
@@ -1407,7 +1407,7 @@ impl NodeIndex {
 
     #[inline]
     pub fn end() -> Self {
-        NodeIndex(std::u32::MAX)
+        NodeIndex(u32::MAX)
     }
 }
 

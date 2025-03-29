@@ -60,7 +60,7 @@ impl Define {
 
 struct NameAndDefine<'a>(&'a str, &'a Define);
 
-impl<'a> fmt::Display for NameAndDefine<'a> {
+impl fmt::Display for NameAndDefine<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "#define {}", self.0)?;
 
@@ -203,7 +203,7 @@ impl DefineMap {
 
     /// Returns true if the map contains a value for the specified key.
     pub fn contains_key(&self, key: &str) -> bool {
-        self.inner.get(key).map_or(false, |v| !v.is_empty())
+        self.inner.get(key).is_some_and(|v| !v.is_empty())
     }
 
     /// Returns a reference to the value corresponding to the key.
@@ -316,7 +316,7 @@ struct IncludeStack<'ctx> {
     stack: Vec<Include<'ctx>>,
 }
 
-impl<'ctx> IncludeStack<'ctx> {
+impl IncludeStack<'_> {
     fn top_file_path(&self) -> &Path {
         for each in self.stack.iter().rev() {
             if let Include::File { ref path, .. } = each {
@@ -331,7 +331,7 @@ impl<'ctx> IncludeStack<'ctx> {
     }
 }
 
-impl<'ctx> Iterator for IncludeStack<'ctx> {
+impl Iterator for IncludeStack<'_> {
     type Item = LocatedToken;
 
     fn next(&mut self) -> Option<LocatedToken> {
@@ -425,7 +425,7 @@ pub struct Preprocessor<'ctx> {
     docs_out: VecDeque<(Location, DocComment)>,
 }
 
-impl<'ctx> HasLocation for Preprocessor<'ctx> {
+impl HasLocation for Preprocessor<'_> {
     fn location(&self) -> Location {
         match self.include_stack.stack.last() {
             Some(Include::File { lexer, .. }) => lexer.location(),
@@ -622,10 +622,9 @@ impl<'ctx> Preprocessor<'ctx> {
     }
 
     fn pop_ifdef(&mut self) -> Option<Ifdef> {
-        self.ifdef_stack.pop().map(|ifdef| {
+        self.ifdef_stack.pop().inspect(|ifdef| {
             self.ifdef_history
                 .insert(range(ifdef.location, self.last_input_loc), ifdef.active);
-            ifdef
         })
     }
 
@@ -704,7 +703,7 @@ impl<'ctx> Preprocessor<'ctx> {
         // All DM source is effectively `#pragma once`.
         let file_id = self.context.register_file(register);
         if let Some(&loc) = self.include_locations.get(&file_id) {
-            if self.multiple_locations.get(&file_id).is_none() {
+            if !self.multiple_locations.contains_key(&file_id) {
                 Err(DMError::new(
                     self.last_input_loc,
                     format!("duplicate #include {:?}", path),
@@ -1378,7 +1377,7 @@ impl<'ctx> Preprocessor<'ctx> {
     }
 }
 
-impl<'ctx> Iterator for Preprocessor<'ctx> {
+impl Iterator for Preprocessor<'_> {
     type Item = LocatedToken;
 
     fn next(&mut self) -> Option<LocatedToken> {

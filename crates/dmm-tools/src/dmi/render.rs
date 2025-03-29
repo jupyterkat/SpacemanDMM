@@ -65,7 +65,7 @@ impl<'a> IconRenderer<'a> {
         &'a self,
         icon_state: &'a State,
         index: usize,
-    ) -> Result<RenderStateGuard> {
+    ) -> Result<RenderStateGuard<'a>> {
         match icon_state.is_animated() {
             false => Ok(RenderStateGuard {
                 renderer: self,

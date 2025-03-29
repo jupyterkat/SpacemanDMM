@@ -312,7 +312,7 @@ pub struct Parser<'ctx, 'an, 'inp> {
     procs_good: u64,
 }
 
-impl<'ctx, 'an, 'inp> HasLocation for Parser<'ctx, 'an, 'inp> {
+impl HasLocation for Parser<'_, '_, '_> {
     fn location(&self) -> Location {
         self.location
     }
@@ -1209,7 +1209,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                 "".to_owned()
             }
         };
-        if path.first().map_or(false, |i| i == "var") {
+        if path.first().is_some_and(|i| i == "var") {
             path.remove(0);
             DMError::new(leading_loc, "'var/' is unnecessary here")
                 .set_severity(Severity::Hint)
