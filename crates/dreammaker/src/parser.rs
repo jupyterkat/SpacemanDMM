@@ -172,6 +172,7 @@ oper_table! { BINARY_OPS;
         (BinaryOp, Greater),
         (BinaryOp, LessEq),
         (BinaryOp, GreaterEq),
+        (BinaryOp, LessOrGreater),
     }
     // << >>
     Shift {
@@ -1043,6 +1044,8 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
             last_part.push_str("<<=");
         } else if self.exact(Punct(LessEq))?.is_some() {
             last_part.push_str("<=")
+        } else if self.exact(Punct(LessOrGreater))?.is_some() {
+            last_part.push_str("<=>");
         } else if self.exact(Punct(Greater))?.is_some() {
             last_part.push('>');
         } else if self.exact(Punct(GreaterEq))?.is_some() {

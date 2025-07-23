@@ -2593,7 +2593,11 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 true,
                 local_vars,
             );
-        } else if typepath.path != "/list" {
+        } else if typepath.path != "/list"
+            && typepath.path != "/alist"
+            && typepath.path != "/vector"
+            && typepath.path != "/pixloc"
+        {
             error(
                 location,
                 format!("couldn't find {}/proc/New", typepath.path),
