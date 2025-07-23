@@ -1354,6 +1354,14 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             "usr".to_owned(),
             Analysis::from_static_type(self.objtree.expect("/mob")).into(),
         );
+        local_vars.insert(
+            "callee".to_owned(),
+            Analysis::from_static_type(self.objtree.expect("/callee")).into(),
+        );
+        local_vars.insert(
+            "caller".to_owned(),
+            Analysis::from_static_type(self.objtree.expect("/callee")).into(),
+        );
         if !self.ty.is_root() {
             local_vars.insert("src".to_owned(), Analysis::from_static_type(self.ty).into());
         }
@@ -3251,6 +3259,26 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             } else {
                 param_idx_map.insert(param_idx, analysis);
                 param_idx += 1;
+            }
+        }
+        if proc.ty().is_root() && proc.name() == "astype" {
+            if let Some(type_val) = param_idx_map.get(&1) {
+                if let Some(Constant::Prefab(path)) = type_val.clone().value {
+                    let type_val = path
+                        .path
+                        .iter()
+                        .map(|x| "/".to_owned() + x)
+                        .collect::<Vec<_>>()
+                        .join("");
+
+                    if let Some(path) = self.objtree.find(&type_val) {
+                        return Analysis::from_static_type(path);
+                    }
+                }
+            }
+
+            if let Some(type_val) = param_idx_map.get(&0) {
+                return Analysis::from(type_val.clone().static_ty);
             }
         }
 

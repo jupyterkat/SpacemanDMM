@@ -16,7 +16,7 @@ use ahash::RandomState;
 
 static PROC_KEYWORDS: &[&str] = &[
     // Implicit variables
-    "args", "global", "src", "usr", // Term
+    "args", "global", "src", "usr", "caller", "callee", // Term
     "null", "as", ".", "..", "new",
     // "list", "input", "locate", "pick" appear in builtin proc list
     "call", // Statement

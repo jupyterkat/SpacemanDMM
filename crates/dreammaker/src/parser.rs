@@ -2360,6 +2360,11 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
                 None => Term::Ident(i.to_owned()),
             },
 
+            Token::Ident(ref i, _) if i == "alist" => match self.arguments(&[], "alist")? {
+                Some(args) => Term::List(args),
+                None => Term::Ident(i.to_owned()),
+            },
+
             // term :: 'call' arglist arglist
             Token::Ident(ref i, _) if i == "call" => Term::DynamicCall(
                 require!(self.arguments(&[], "call")),
