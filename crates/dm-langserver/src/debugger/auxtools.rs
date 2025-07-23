@@ -127,7 +127,7 @@ impl Auxtools {
 
         match &mut self.stream {
             StreamState::Connected(stream) => {
-                let data = bincode::serialize(&request)?;
+                let data = bincode::serde::encode_to_vec(&request, bincode::config::legacy())?;
                 stream.write_all(&(data.len() as u32).to_le_bytes())?;
                 stream.write_all(&data[..])?;
                 stream.flush()?;
@@ -441,7 +441,16 @@ impl AuxtoolsThread {
 
     // returns true if we should disconnect
     fn handle_response(&mut self, data: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
-        let response = bincode::deserialize::<Response>(data)?;
+        type BincodeLegacy = bincode::config::Configuration<
+            bincode::config::LittleEndian,
+            bincode::config::Fixint,
+            bincode::config::NoLimit,
+        >;
+
+        let (response, _) = bincode::serde::borrow_decode_from_slice::<Response, BincodeLegacy>(
+            data,
+            bincode::config::legacy(),
+        )?;
 
         match response {
             Response::Disconnect => return Ok(true),

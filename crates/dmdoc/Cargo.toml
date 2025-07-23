@@ -10,11 +10,11 @@ dreammaker = { path = "../dreammaker" }
 pulldown-cmark = "0.9.6"
 maud = "0.27.0"
 walkdir = "2.5.0"
-git2 = { version = "0.20.1", default-features = false }
+git2 = { version = "0.20.2", default-features = false }
 
 [dev-dependencies]
 walkdir = "2.5.0"
 
 [build-dependencies]
-chrono = "0.4.40"
-git2 = { version = "0.20.1", default-features = false }
+chrono = "0.4.41"
+git2 = { version = "0.20.2", default-features = false }
