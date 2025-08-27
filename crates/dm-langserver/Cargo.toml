@@ -5,9 +5,9 @@ authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2024"
 
 [dependencies]
-url = "2.5.4"
+url = "2.5.7"
 serde = "1.0.219"
-serde_json = "1.0.141"
+serde_json = "1.0.143"
 serde_derive = "1.0.219"
 bincode = { version = "2.0.1", features = ["serde"] }
 jsonrpc-core = "18.0.0"
@@ -16,8 +16,8 @@ dap-types = { path = "../dap-types" }
 dreammaker = { path = "../dreammaker" }
 dreamchecker = { path = "../dreamchecker" }
 interval-tree = { path = "../interval-tree" }
-libc = "0.2.174"
-regex = "1.11.1"
+libc = "0.2.175"
+regex = "1.11.2"
 lazy_static = "1.5"
 ahash = "0.8.12"
 
