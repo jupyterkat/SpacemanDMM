@@ -8,7 +8,7 @@ use std::{fmt, io};
 
 use ahash::RandomState;
 
-use interval_tree::{range, IntervalTree};
+use interval_tree::{IntervalTree, range};
 
 use super::annotation::*;
 use super::ast::Ident;
@@ -319,7 +319,7 @@ struct IncludeStack<'ctx> {
 impl IncludeStack<'_> {
     fn top_file_path(&self) -> &Path {
         for each in self.stack.iter().rev() {
-            if let Include::File { ref path, .. } = each {
+            if let Include::File { path, .. } = each {
                 return path;
             }
         }
@@ -964,7 +964,7 @@ impl<'ctx> Preprocessor<'ctx> {
                                             _ => {
                                                 return Err(self.error(
                                                     "malformed macro parameters, expected name",
-                                                ))
+                                                ));
                                             }
                                         }
                                         match next!() {
@@ -980,7 +980,7 @@ impl<'ctx> Preprocessor<'ctx> {
                                             _ => {
                                                 return Err(self.error(
                                                     "malformed macro parameters, expected comma",
-                                                ))
+                                                ));
                                             }
                                         }
                                     }
@@ -1329,7 +1329,7 @@ impl<'ctx> Preprocessor<'ctx> {
                                                         "can't stringify non-argument ident {:?}",
                                                         argname
                                                     ),
-                                                ))
+                                                ));
                                             }
                                         }
                                     }
@@ -1337,13 +1337,13 @@ impl<'ctx> Preprocessor<'ctx> {
                                         return Err(DMError::new(
                                             self.last_input_loc,
                                             format!("can't stringify non-ident '{}'", tok),
-                                        ))
+                                        ));
                                     }
                                     None => {
                                         return Err(DMError::new(
                                             self.last_input_loc,
                                             "can't stringify EOF",
-                                        ))
+                                        ));
                                     }
                                 },
                                 _ => expansion.push_back(token),

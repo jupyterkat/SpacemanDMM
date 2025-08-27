@@ -1,8 +1,8 @@
 use super::values::*;
 use eyre::format_err;
 use nom::{
-    bytes::complete::tag, character::complete::alpha1, combinator::map_res,
-    sequence::separated_pair, IResult, Parser,
+    IResult, Parser, bytes::complete::tag, character::complete::alpha1, combinator::map_res,
+    sequence::separated_pair,
 };
 
 #[derive(Debug, PartialEq, Eq)]

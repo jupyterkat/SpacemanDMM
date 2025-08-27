@@ -46,7 +46,7 @@ impl<'a> IconRenderer<'a> {
     /// Renders with either [`gif::Encoder`] or [`png::Encoder`] depending on whether the icon state is animated
     /// or not.
     /// Returns a [`RenderType`] to help you determine how to treat the written data.
-    pub fn prepare_render(&self, icon_state: IconIndex<'_>) -> Result<RenderStateGuard> {
+    pub fn prepare_render(&self, icon_state: IconIndex<'_>) -> Result<RenderStateGuard<'_>> {
         self.prepare_render_state(
             self.source.get_icon_state(icon_state).ok_or_else(|| {
                 eyre::eyre!(

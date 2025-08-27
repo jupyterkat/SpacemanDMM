@@ -3,7 +3,7 @@ name = "dmdoc"
 version = "1.8.0"
 authors = ["Tad Hardesty <tad@platymuus.com>"]
 homepage = "https://github.com/SpaceManiac/SpacemanDMM/blob/master/crates/dmdoc/README.md"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 dreammaker = { path = "../dreammaker" }

@@ -1,21 +1,21 @@
 use indexmap::IndexMap;
 use std::collections::HashMap;
 
-use eyre::{format_err, Result};
+use eyre::{Result, format_err};
 use nom::{
+    IResult, Parser,
     bytes::complete::tag,
     character::complete::{multispace0, newline, space1},
     combinator::{all_consuming, map_res, verify},
     multi::{many0, many1},
     sequence::{delimited, pair, terminated},
-    IResult, Parser,
 };
 
 use crate::prelude::{Dir, Dirs};
 
 use super::{
-    key_value::{key_value, KeyValue},
-    state::{state, State},
+    key_value::{KeyValue, key_value},
+    state::{State, state},
     values::Value,
 };
 

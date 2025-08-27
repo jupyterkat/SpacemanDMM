@@ -126,7 +126,7 @@ where
 /// On Windows, this is a no-op.
 #[cfg(windows)]
 #[inline(always)]
-pub fn fix_case(path: &Path) -> Cow<Path> {
+pub fn fix_case(path: &Path) -> Cow<'_, Path> {
     Cow::Borrowed(path)
 }
 
@@ -135,7 +135,7 @@ pub fn fix_case(path: &Path) -> Cow<Path> {
 /// On non-Windows platforms, the parent of the given path is searched for a
 /// file with the same name but a different case.
 #[cfg(not(windows))]
-pub fn fix_case(path: &Path) -> Cow<Path> {
+pub fn fix_case(path: &Path) -> Cow<'_, Path> {
     if path.exists() {
         return Cow::Borrowed(path);
     }

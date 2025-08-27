@@ -4,10 +4,10 @@
 use std::rc::Rc;
 
 use crate::docs::DocCollection;
-use interval_tree::{range, IntervalTree, RangeInclusive, RangePairIter};
+use interval_tree::{IntervalTree, RangeInclusive, RangePairIter, range};
 
-use super::ast::*;
 use super::Location;
+use super::ast::*;
 
 pub type Iter<'a> = RangePairIter<'a, Location, Annotation>;
 
@@ -86,19 +86,19 @@ impl AnnotationTree {
         self.len == 0
     }
 
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<'_> {
         self.tree.iter()
     }
 
-    pub fn get_location(&self, loc: Location) -> Iter {
+    pub fn get_location(&self, loc: Location) -> Iter<'_> {
         self.tree.range(range(loc.pred(), loc))
     }
 
-    pub fn get_range(&self, place: std::ops::Range<Location>) -> Iter {
+    pub fn get_range(&self, place: std::ops::Range<Location>) -> Iter<'_> {
         self.tree.range(range(place.start, place.end.pred()))
     }
 
-    pub fn get_range_raw(&self, place: RangeInclusive<Location>) -> Iter {
+    pub fn get_range_raw(&self, place: RangeInclusive<Location>) -> Iter<'_> {
         self.tree.range(place)
     }
 }

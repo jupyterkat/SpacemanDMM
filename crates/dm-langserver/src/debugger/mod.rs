@@ -42,10 +42,10 @@ mod launched;
 
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::sync::{atomic, Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic};
 
-use dm::objtree::ObjectTree;
 use dm::FileId;
+use dm::objtree::ObjectTree;
 use dreammaker::config::DebugEngine;
 
 use auxtools::Auxtools;

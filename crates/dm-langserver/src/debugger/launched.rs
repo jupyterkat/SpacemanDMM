@@ -222,12 +222,14 @@ mod raw {
     }
 
     pub unsafe fn kill(handle: Handle) -> bool {
-        extern "system" {
-            fn TerminateProcess(
-                hProcess: std::os::windows::raw::HANDLE,
-                uExitCode: std::os::raw::c_uint,
-            ) -> std::os::raw::c_int;
+        unsafe {
+            unsafe extern "system" {
+                fn TerminateProcess(
+                    hProcess: std::os::windows::raw::HANDLE,
+                    uExitCode: std::os::raw::c_uint,
+                ) -> std::os::raw::c_int;
+            }
+            TerminateProcess(handle, 1) != 0
         }
-        TerminateProcess(handle, 1) != 0
     }
 }

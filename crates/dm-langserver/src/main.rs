@@ -38,14 +38,14 @@ use jsonrpc::{Call, Output, Request, Response};
 use lsp_types::MessageType;
 use url::Url;
 
+use dm::FileId;
 use dm::annotation::{Annotation, AnnotationTree};
 use dm::objtree::TypeRef;
-use dm::FileId;
 
 use ahash::RandomState;
 
 fn main() {
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     eprintln!(
         "dm-langserver {}  Copyright (C) 2017-2023  Tad Hardesty",
@@ -772,13 +772,16 @@ impl<'a> Engine<'a> {
         })
     }
 
-    fn find_type_context<'b, I, Ign>(&self, iter: &I) -> (Option<TypeRef>, Option<(&'b str, usize)>)
+    fn find_type_context<'b, I, Ign>(
+        &self,
+        iter: &I,
+    ) -> (Option<TypeRef<'_>>, Option<(&'b str, usize)>)
     where
         I: Iterator<Item = (Ign, &'b Annotation)> + Clone,
     {
         let mut found = None;
         let mut proc_name = None;
-        if_annotation! { Annotation::ProcBody(ref proc_path, ref idx) in iter; {
+        if_annotation! { Annotation::ProcBody(proc_path, idx) in iter; {
             // chop off proc name and 'proc/' or 'verb/' if it's there
             // TODO: factor this logic somewhere
             let mut proc_path = &proc_path[..];
@@ -1273,7 +1276,8 @@ handle_method_call! {
         if let Some(id) = init.process_id {
             self.parent_pid = id;
         }
-        if let Some(mut url) = init.root_uri {
+        if let Some(ws_folders) = init.workspace_folders {
+            let mut url = ws_folders.get(0).unwrap().clone().uri;
             if !url.path().ends_with('/') {
                 let path = format!("{}/", url.path());
                 url.set_path(&path);
@@ -1888,7 +1892,7 @@ handle_method_call! {
         let iter = annotations.get_location(location);
         let mut result = None;
 
-        if_annotation! { Annotation::ProcArguments(priors, proc_name, mut idx) in iter; {
+        if_annotation! { &Annotation::ProcArguments(ref priors, ref proc_name, mut idx) in iter; {
             // take the specific argument we're working on
             if_annotation! { Annotation::ProcArgument(i) in iter; {
                 idx = *i;
@@ -1982,7 +1986,7 @@ handle_method_call! {
                 let range = span_to_range(start..end);
                 let selection_range = location_to_range(start);
                 match annotation {
-                    Annotation::TreeBlock(ref path) => {
+                    Annotation::TreeBlock(path) => {
                         if path.is_empty() { continue }
                         let (name, detail) = name_and_detail(path);
                         result.push(DocumentSymbol {
@@ -1996,7 +2000,7 @@ handle_method_call! {
                             children: Some(find_document_symbols(iter, end)),
                         });
                     },
-                    Annotation::Variable(ref path) => {
+                    Annotation::Variable(path) => {
                         result.push(DocumentSymbol {
                             name: path.last().unwrap().to_owned(),
                             detail: None,
@@ -2008,7 +2012,7 @@ handle_method_call! {
                             children: None,
                         });
                     },
-                    Annotation::ProcBody(ref path, _) => {
+                    Annotation::ProcBody(path, _) => {
                         if path.is_empty() { continue }
                         let (name, detail) = name_and_detail(path);
                         let kind = if path.len() == 1 || (path.len() == 2 && path[0] == "proc") {
@@ -2029,7 +2033,7 @@ handle_method_call! {
                             children: Some(find_document_symbols(iter, end)),
                         });
                     },
-                    Annotation::LocalVarScope(_, ref name) => {
+                    Annotation::LocalVarScope(_, name) => {
                         result.push(DocumentSymbol {
                             name: name.to_owned(),
                             detail: None,
@@ -2041,7 +2045,7 @@ handle_method_call! {
                             children: None,
                         });
                     },
-                    Annotation::MacroDefinition(ref name) => {
+                    Annotation::MacroDefinition(name) => {
                         result.push(DocumentSymbol {
                             name: name.to_owned(),
                             detail: None,

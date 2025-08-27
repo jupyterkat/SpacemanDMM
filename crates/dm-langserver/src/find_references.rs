@@ -2,9 +2,9 @@
 
 use std::collections::HashMap;
 
+use dm::Location;
 use dm::ast::*;
 use dm::objtree::*;
-use dm::Location;
 use dreammaker as dm;
 
 use ahash::RandomState;
@@ -273,7 +273,7 @@ impl<'o> WalkProc<'o> {
                 self.visit_expression(condition.location, &condition.elem, None);
             }
             Statement::If { arms, else_arm } => {
-                for (condition, ref block) in arms.iter() {
+                for (condition, block) in arms.iter() {
                     self.visit_expression(condition.location, &condition.elem, None);
                     self.visit_block(block);
                 }
@@ -354,7 +354,7 @@ impl<'o> WalkProc<'o> {
                 default,
             } => {
                 self.visit_expression(location, input, None);
-                for (case, ref block) in cases.iter() {
+                for (case, block) in cases.iter() {
                     for case_part in case.elem.iter() {
                         match case_part {
                             dm::ast::Case::Exact(expr) => {
@@ -542,7 +542,7 @@ impl<'o> WalkProc<'o> {
                 StaticType::None
             }
             Term::InterpString(_, parts) => {
-                for (ref expr, _) in parts.iter() {
+                for (expr, _) in parts.iter() {
                     if let Some(expr) = expr {
                         self.visit_expression(location, expr, None);
                     }
@@ -604,7 +604,7 @@ impl<'o> WalkProc<'o> {
             Term::Locate { args, in_list } => {
                 // TODO: use /proc/locate
                 self.visit_arguments(location, args);
-                if let Some(ref expr) = in_list {
+                if let Some(expr) = in_list {
                     self.visit_expression(location, expr, None);
                 }
                 StaticType::None
@@ -616,7 +616,7 @@ impl<'o> WalkProc<'o> {
             } => {
                 // TODO: use /proc/input
                 self.visit_arguments(location, args);
-                if let Some(ref expr) = in_list {
+                if let Some(expr) = in_list {
                     self.visit_expression(location, expr, None);
                 }
                 StaticType::None
@@ -624,7 +624,7 @@ impl<'o> WalkProc<'o> {
             Term::Pick(args) => {
                 // TODO: use /proc/pick
                 for (weight, value) in args.iter() {
-                    if let Some(ref weight) = weight {
+                    if let Some(weight) = weight {
                         self.visit_expression(location, weight, None);
                     }
                     self.visit_expression(location, value, None);

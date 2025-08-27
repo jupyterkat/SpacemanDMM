@@ -557,7 +557,7 @@ pub fn from_utf8_or_latin1(bytes: Vec<u8>) -> String {
 }
 
 /// Convert the input bytes to a `String` attempting UTF-8 or falling back to Latin-1.
-pub fn from_utf8_or_latin1_borrowed(bytes: &[u8]) -> Cow<str> {
+pub fn from_utf8_or_latin1_borrowed(bytes: &[u8]) -> Cow<'_, str> {
     match std::str::from_utf8(bytes) {
         Ok(v) => Cow::Borrowed(v),
         Err(_) => Cow::Owned(from_latin1(bytes)),
@@ -613,7 +613,7 @@ pub fn buffer_file(file: FileId, path: &std::path::Path) -> Result<Vec<u8>, DMEr
                 },
                 "i/o error opening file",
             )
-            .with_cause(error))
+            .with_cause(error));
         }
     };
 

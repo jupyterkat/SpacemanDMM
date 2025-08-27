@@ -1,11 +1,11 @@
 use nom::{
+    IResult, Parser,
     branch::alt,
     bytes::complete::tag,
     character::complete::{digit1, none_of},
     combinator::{map, map_parser, recognize},
     multi::fold_many0,
     sequence::delimited,
-    IResult, Parser,
 };
 
 use super::polyfill::separated_list1_nonoptional;

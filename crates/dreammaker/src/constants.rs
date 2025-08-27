@@ -247,7 +247,7 @@ impl Constant {
 
     pub fn eq_resource(&self, resource: &str) -> bool {
         match self {
-            Constant::String(ref s) | Constant::Resource(ref s) => &**s == resource,
+            Constant::String(s) | Constant::Resource(s) => &**s == resource,
             _ => false,
         }
     }
@@ -270,7 +270,7 @@ impl Constant {
         match (self, key) {
             // Narrowing conversion is intentional.
             (Constant::List(elements), &Constant::Float(i)) => {
-                return elements.get(i as usize).map(|(k, _)| k)
+                return elements.get(i as usize).map(|(k, _)| k);
             }
             (Constant::List(elements), key) => {
                 for (k, v) in elements.iter() {
@@ -322,7 +322,7 @@ impl From<bool> for Constant {
 impl PartialEq<str> for Constant {
     fn eq(&self, other: &str) -> bool {
         match self {
-            Constant::String(ref s) | Constant::Resource(ref s) => &**s == other,
+            Constant::String(s) | Constant::Resource(s) => &**s == other,
             _ => false,
         }
     }
@@ -435,7 +435,7 @@ impl fmt::Display for ConstFn {
 // The constant evaluator
 
 pub fn evaluate_str(location: Location, input: &[u8]) -> Result<Constant, DMError> {
-    use super::lexer::{from_utf8_or_latin1_borrowed, Lexer, LocationTracker};
+    use super::lexer::{Lexer, LocationTracker, from_utf8_or_latin1_borrowed};
 
     let ctx = Context::default();
     let mut lexer = Lexer::from_input(&ctx, LocationTracker::from_location(location, input.into()));
@@ -484,7 +484,8 @@ pub fn preprocessor_evaluate(
 
 /// Evaluate all the type-level variables in an object tree into constants.
 pub(crate) fn evaluate_all(context: &Context, tree: &mut ObjectTree) {
-    for ty in tree.node_indices() {
+    let indices: Vec<_> = tree.node_indices().collect();
+    for ty in indices {
         let keys: Vec<String> = tree[ty].vars.keys().cloned().collect();
         for key in keys {
             if !tree[ty].get_var_declaration(&key, tree).is_none_or(|x| {
@@ -745,7 +746,7 @@ impl ConstantFolder<'_> {
                 return Err(self.error(format!(
                     "non-constant unary operation: {}",
                     op.around(&term)
-                )))
+                )));
             }
         })
     }
@@ -777,7 +778,7 @@ impl ConstantFolder<'_> {
         numeric!(GreaterEq >=);
         match (op, lhs, rhs) {
             (BinaryOp::FloatMod, Float(lhs), Float(rhs)) => {
-                return Ok(Constant::from(lhs - ((lhs / rhs).floor() * rhs)))
+                return Ok(Constant::from(lhs - ((lhs / rhs).floor() * rhs)));
             }
             (_, lhs_, rhs_) => {
                 lhs = lhs_;
@@ -863,10 +864,11 @@ impl ConstantFolder<'_> {
                         )));
                     }
                     match args[0].as_term() {
-                        Some(Term::Ident(ref ident)) => Constant::from(defines.contains_key(ident)),
+                        Some(Term::Ident(ident)) => Constant::from(defines.contains_key(ident)),
                         _ => {
-                            return Err(self
-                                .error("malformed defined() call, argument given isn't an Ident."))
+                            return Err(self.error(
+                                "malformed defined() call, argument given isn't an Ident.",
+                            ));
                         }
                     }
                 }
@@ -882,7 +884,7 @@ impl ConstantFolder<'_> {
                         None => {
                             return Err(self.error(
                                 "malformed nameof() call, expression appears to have no name",
-                            ))
+                            ));
                         }
                     }
                 }
@@ -1001,7 +1003,7 @@ impl ConstantFolder<'_> {
                 return Err(self.error(format!(
                     "cannot resolve relative type path without an object tree: {}",
                     FormatTypePath(&prefab.path)
-                )))
+                )));
             }
         };
 
@@ -1013,7 +1015,7 @@ impl ConstantFolder<'_> {
                     "could not resolve {} relative to {}",
                     FormatTypePath(&prefab.path),
                     relative_to
-                )))
+                )));
             }
         };
 
@@ -1148,14 +1150,14 @@ impl ConstantFolder<'_> {
                                 return Err(self.error(format!(
                                     "malformed rgb() call, bad color space: {}",
                                     kwarg_value
-                                )))
+                                )));
                             }
                         },
                         _ => {
                             return Err(self.error(format!(
                                 "malformed rgb() call, bad kwarg passed: {}",
                                 kwarg
-                            )))
+                            )));
                         }
                     }
                 } else {
@@ -1241,7 +1243,7 @@ impl ConstantFolder<'_> {
                             return Err(self.error(format!(
                                 "malformed rgb() call, bad kwarg passed: {}",
                                 kwarg
-                            )))
+                            )));
                         }
                     };
                 } else {

@@ -77,7 +77,11 @@ fn final_proc() {
 }
 
 pub const NO_OVERRIDE_DISABLE_ERRORS: &[(u32, u16, &str)] = &[
-    (5, 5, "/mob/subtype/proc/test sets SpacemanDMM_should_not_override false, but it cannot be disabled."),
+    (
+        5,
+        5,
+        "/mob/subtype/proc/test sets SpacemanDMM_should_not_override false, but it cannot be disabled.",
+    ),
     (4, 18, "proc overrides parent, prohibited by /mob/proc/test"),
 ];
 

@@ -151,7 +151,7 @@ impl Context {
         }
     }
 
-    pub fn config(&self) -> Ref<Config> {
+    pub fn config(&self) -> Ref<'_, Config> {
         self.config.borrow()
     }
 
@@ -198,13 +198,13 @@ impl Context {
     }
 
     /// Access the list of diagnostics generated so far.
-    pub fn errors(&self) -> Ref<[DMError]> {
+    pub fn errors(&self) -> Ref<'_, [DMError]> {
         Ref::map(self.errors.borrow(), |x| &**x)
     }
 
     /// Mutably access the diagnostics list. Dangerous.
     #[doc(hidden)]
-    pub fn errors_mut(&self) -> RefMut<Vec<DMError>> {
+    pub fn errors_mut(&self) -> RefMut<'_, Vec<DMError>> {
         self.errors.borrow_mut()
     }
 

@@ -47,9 +47,11 @@ fn sleep() {
     check_errors_match(code, SLEEP_ERRORS);
 }
 
-pub const SLEEP_ERRORS2: &[(u32, u16, &str)] = &[
-    (8, 21, "/mob/living/proc/bar calls /mob/living/proc/foo which has override child proc that sleeps /mob/living/carbon/proc/foo"),
-];
+pub const SLEEP_ERRORS2: &[(u32, u16, &str)] = &[(
+    8,
+    21,
+    "/mob/living/proc/bar calls /mob/living/proc/foo which has override child proc that sleeps /mob/living/carbon/proc/foo",
+)];
 
 #[test]
 fn sleep2() {
@@ -111,18 +113,47 @@ fn sleep3() {
     . = ..()
 "##
     .trim();
-    check_errors_match(code, &[
-        (8, 23, "/atom/movable/proc/bar calls /atom/movable/proc/foo which has override child proc that sleeps /mob/proc/foo"),
-    ]);
+    check_errors_match(
+        code,
+        &[(
+            8,
+            23,
+            "/atom/movable/proc/bar calls /atom/movable/proc/foo which has override child proc that sleeps /mob/proc/foo",
+        )],
+    );
 }
 
 pub const SLEEP_ERROR4: &[(u32, u16, &str)] = &[
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)"),
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /mob/proc/test2"),
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checksoundquery"),
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checkmeasuretext"),
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkimport"),
-    (1, 16, "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkexport"),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)",
+    ),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /mob/proc/test2",
+    ),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checksoundquery",
+    ),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checkmeasuretext",
+    ),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkimport",
+    ),
+    (
+        1,
+        16,
+        "/mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkexport",
+    ),
 ];
 
 #[test]
@@ -155,9 +186,11 @@ fn sleep4() {
 }
 
 // Test overrides and for regression of issue #267
-pub const SLEEP_ERROR5: &[(u32, u16, &str)] = &[
-        (7, 19, "/datum/sub/proc/checker sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/sleeper"),
-];
+pub const SLEEP_ERROR5: &[(u32, u16, &str)] = &[(
+    7,
+    19,
+    "/datum/sub/proc/checker sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/sleeper",
+)];
 
 #[test]
 fn sleep5() {
@@ -181,9 +214,11 @@ fn sleep5() {
     check_errors_match(code, SLEEP_ERROR5);
 }
 
-pub const PURE_ERRORS: &[(u32, u16, &str)] = &[
-    (12, 16, "/mob/proc/test2 sets SpacemanDMM_should_be_pure but calls a /proc/impure that does impure operations"),
-];
+pub const PURE_ERRORS: &[(u32, u16, &str)] = &[(
+    12,
+    16,
+    "/mob/proc/test2 sets SpacemanDMM_should_be_pure but calls a /proc/impure that does impure operations",
+)];
 
 #[test]
 fn pure() {

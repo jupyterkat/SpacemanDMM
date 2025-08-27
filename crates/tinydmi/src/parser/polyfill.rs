@@ -1,6 +1,6 @@
 use nom::{
-    error::{ErrorKind, ParseError},
     Check, Err, Input, Mode, OutputM, OutputMode, PResult, Parser,
+    error::{ErrorKind, ParseError},
 };
 
 /// it's [`nom::separated_list1`] except it fails if the first separator isn't found
@@ -43,6 +43,16 @@ where
                 i = i1;
             }
         }
+        // MUST have the first separator
+        if self
+            .separator
+            .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
+            .is_err()
+        {
+            return Err(Err::Error(OM::Error::bind(|| {
+                <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+            })));
+        };
 
         loop {
             let len = i.input_len();
@@ -50,12 +60,7 @@ where
                 .separator
                 .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
             {
-                Err(Err::Error(_)) => {
-                    return Err(Err::Error(OM::Error::bind(|| {
-                        <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
-                    })))
-                }
-
+                Err(Err::Error(_)) => return Ok((i, res)),
                 Err(Err::Failure(e)) => return Err(Err::Failure(e)),
                 Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
                 Ok((i1, _)) => {

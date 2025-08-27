@@ -1759,7 +1759,7 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
 
             // check for a label `ident:`
             if let Statement::Expr(ref expr) = result {
-                if let Some(Term::Ident(ref name)) = expr.as_term() {
+                if let Some(Term::Ident(name)) = expr.as_term() {
                     if let Some(()) = self.exact(Token::Punct(Punctuation::Colon))? {
                         // it's a label! check for a block
                         return spanned(Statement::Label {

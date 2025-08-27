@@ -59,7 +59,7 @@ impl DocumentStore {
                 return Err(invalid_request(format!(
                     "cannot change non-opened: {}",
                     doc_id.uri
-                )))
+                )));
             }
         };
 
@@ -239,11 +239,7 @@ pub fn find_word(text: &str, offset: usize) -> &str {
         end = end_next;
     }
 
-    if start == end {
-        ""
-    } else {
-        &text[start..end]
-    }
+    if start == end { "" } else { &text[start..end] }
 }
 
 fn is_ident(ch: char) -> bool {

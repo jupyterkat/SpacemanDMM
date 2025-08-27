@@ -3,11 +3,31 @@ use dreamchecker as dc;
 use dc::test_helpers::*;
 
 pub const PRIVATE_PROC_ERRORS: &[(u32, u16, &str)] = &[
-    (5, 21, "proc overrides private parent, prohibited by /mob/proc/private"),
-    (11, 5, "/mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match"),
-    (12, 8, "/mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match"),
-    (15, 6, "/obj/proc/test attempting to call private proc /mob/proc/private2, types do not match"),
-    (17, 6, "/obj/proc/test attempting to call private proc /mob/proc/private, types do not match"),
+    (
+        5,
+        21,
+        "proc overrides private parent, prohibited by /mob/proc/private",
+    ),
+    (
+        11,
+        5,
+        "/mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match",
+    ),
+    (
+        12,
+        8,
+        "/mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match",
+    ),
+    (
+        15,
+        6,
+        "/obj/proc/test attempting to call private proc /mob/proc/private2, types do not match",
+    ),
+    (
+        17,
+        6,
+        "/obj/proc/test attempting to call private proc /mob/proc/private, types do not match",
+    ),
 ];
 
 #[test]

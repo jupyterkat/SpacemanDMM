@@ -12,8 +12,8 @@ use std::collections::HashSet;
 use std::fmt;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::RwLock;
+use std::sync::atomic::{AtomicIsize, Ordering};
 
 use clap::{Parser, Subcommand};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};

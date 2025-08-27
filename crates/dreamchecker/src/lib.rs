@@ -196,7 +196,7 @@ impl<'o> AssumptionSet<'o> {
         ]
     }
 
-    fn conflicts_with(&self, new: &Assumption) -> Option<&Assumption> {
+    fn conflicts_with(&self, new: &Assumption) -> Option<&Assumption<'_>> {
         self.set
             .iter()
             .find(|&each| each.oneway_conflict(new) || new.oneway_conflict(each))
@@ -1577,7 +1577,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     continues: false,
                     breaks: false,
                     fuzzy: false,
-                }
+                };
             }
             Statement::Crash(expr) => {
                 if let Some(expr) = expr {
@@ -1625,7 +1625,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             Statement::If { arms, else_arm } => {
                 let mut allterm = ControlFlow::alltrue();
                 let mut alwaystrue = false;
-                for (condition, ref block) in arms.iter() {
+                for (condition, block) in arms.iter() {
                     let mut scoped_locals = local_vars.clone();
                     self.visit_control_condition(condition.location, &condition.elem);
                     if alwaystrue {
@@ -1834,11 +1834,13 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 let mut allterm = ControlFlow::alltrue();
                 self.visit_control_condition(location, input);
                 self.visit_expression(location, input, None, local_vars);
-                for (case, ref block) in cases.iter() {
+                for (case, block) in cases.iter() {
                     let mut scoped_locals = local_vars.clone();
-                    if let [dm::ast::Case::Exact(Expression::BinaryOp {
-                        op: BinaryOp::Or, ..
-                    })] = case.elem[..]
+                    if let [
+                        dm::ast::Case::Exact(Expression::BinaryOp {
+                            op: BinaryOp::Or, ..
+                        }),
+                    ] = case.elem[..]
                     {
                         error(case.location, "Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma")
                             .set_severity(Severity::Warning)
@@ -1916,7 +1918,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     continues: true,
                     breaks: false,
                     fuzzy: true,
-                }
+                };
             }
             Statement::Break(_) => {
                 return ControlFlow {
@@ -1924,7 +1926,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     continues: false,
                     breaks: true,
                     fuzzy: true,
-                }
+                };
             }
             Statement::Goto(_) => {}
             Statement::Label { name: _, block } => {
@@ -2339,7 +2341,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 }
             }
             Term::InterpString(_, parts) => {
-                for (ref expr, _) in parts.iter() {
+                for (expr, _) in parts.iter() {
                     if let Some(expr) = expr {
                         self.visit_expression(location, expr, None, local_vars);
                     }
@@ -2463,7 +2465,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 }
                 // TODO: deal with in_list
                 self.visit_arguments(location, args, local_vars);
-                if let Some(ref expr) = in_list {
+                if let Some(expr) = in_list {
                     self.visit_expression(location, expr, None, local_vars);
                 }
 
@@ -2500,7 +2502,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             }
             Term::Locate { args, in_list } => {
                 self.visit_arguments(location, args, local_vars);
-                if let Some(ref expr) = in_list {
+                if let Some(expr) = in_list {
                     self.visit_expression(location, expr, None, local_vars);
                 }
 
@@ -2513,7 +2515,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             }
             Term::Pick(choices) => {
                 for (weight, choice) in choices.iter() {
-                    if let Some(ref weight) = weight {
+                    if let Some(weight) = weight {
                         self.visit_expression(location, weight, None, local_vars);
                     }
                     self.visit_expression(location, choice, None, local_vars);

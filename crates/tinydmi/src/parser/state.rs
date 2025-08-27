@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
-use eyre::{format_err, Result};
+use eyre::{Result, format_err};
 use nom::{
+    IResult, Parser,
     character::complete::{newline, space1},
     combinator::{map_res, verify},
     multi::many1,
     sequence::{delimited, pair, terminated},
-    IResult, Parser,
 };
 
 use super::{
-    key_value::{key_value, Dirs, KeyValue},
+    key_value::{Dirs, KeyValue, key_value},
     values::Value,
 };
 

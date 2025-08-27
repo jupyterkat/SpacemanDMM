@@ -3,7 +3,7 @@ name = "dmm-tools-cli"
 version = "1.8.0"
 authors = ["Tad Hardesty <tad@platymuus.com>"]
 description = "BYOND map rendering and analysis tools powered by SpacemanDMM"
-edition = "2021"
+edition = "2024"
 
 [[bin]]
 name = "dmm-tools"
