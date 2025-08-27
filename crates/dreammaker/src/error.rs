@@ -187,12 +187,12 @@ impl Context {
         if !self.config.borrow().registerable_error(&error) {
             return;
         }
-        if let Some(print_severity) = self.print_severity {
-            if error.severity() <= print_severity {
-                let stderr = termcolor::StandardStream::stderr(termcolor::ColorChoice::Auto);
-                self.pretty_print_error(&mut stderr.lock(), &error)
-                    .expect("error writing to stderr");
-            }
+        if let Some(print_severity) = self.print_severity
+            && error.severity() <= print_severity
+        {
+            let stderr = termcolor::StandardStream::stderr(termcolor::ColorChoice::Auto);
+            self.pretty_print_error(&mut stderr.lock(), &error)
+                .expect("error writing to stderr");
         }
         self.errors.borrow_mut().push(error);
     }

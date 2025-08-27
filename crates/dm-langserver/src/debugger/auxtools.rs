@@ -119,10 +119,10 @@ impl Auxtools {
     }
 
     fn send(&mut self, request: Request) -> Result<(), Box<dyn std::error::Error>> {
-        if let StreamState::Waiting(recv) = &self.stream {
-            if let Ok(stream) = recv.try_recv() {
-                self.stream = StreamState::Connected(stream);
-            }
+        if let StreamState::Waiting(recv) = &self.stream
+            && let Ok(stream) = recv.try_recv()
+        {
+            self.stream = StreamState::Connected(stream);
         }
 
         match &mut self.stream {
@@ -166,7 +166,7 @@ impl Auxtools {
         self.send_or_disconnect(Request::Configured)?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }
@@ -292,7 +292,7 @@ impl Auxtools {
         })?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }
@@ -303,7 +303,7 @@ impl Auxtools {
         })?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }
@@ -314,7 +314,7 @@ impl Auxtools {
         })?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }
@@ -325,7 +325,7 @@ impl Auxtools {
         })?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }
@@ -334,7 +334,7 @@ impl Auxtools {
         self.send_or_disconnect(Request::Pause)?;
 
         match self.read_response_or_disconnect()? {
-            Response::Ack { .. } => Ok(()),
+            Response::Ack => Ok(()),
             response => Err(Box::new(UnexpectedResponse::new("Ack", response))),
         }
     }

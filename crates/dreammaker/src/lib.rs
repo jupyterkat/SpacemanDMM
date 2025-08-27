@@ -102,10 +102,10 @@ where
                     }
                     write!(w, "{}", &SPACES[..spaces % SPACES.len()])?;
                     needs_newline = false;
-                } else if let Some(prev) = prev {
-                    if other.separate_from(&prev) {
-                        write!(w, " ")?;
-                    }
+                } else if let Some(prev) = prev
+                    && other.separate_from(&prev)
+                {
+                    write!(w, " ")?;
                 }
                 write!(w, "{}", other)?;
                 prev = Some(other);

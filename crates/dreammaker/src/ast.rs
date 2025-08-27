@@ -1140,23 +1140,23 @@ impl Term {
     }
 
     pub fn valid_for_range(&self, other: &Term, step: Option<&Expression>) -> Option<bool> {
-        if let Term::Int(i) = *self {
-            if let Term::Int(o) = *other {
-                // edge case
-                if i == 0 && o == 0 {
-                    return Some(false);
-                }
-                if let Some(stepexp) = step {
-                    if let Some(stepterm) = stepexp.as_term() {
-                        if let Term::Int(_s) = stepterm {
-                            return Some(true);
-                        }
-                    } else {
+        if let Term::Int(i) = *self
+            && let Term::Int(o) = *other
+        {
+            // edge case
+            if i == 0 && o == 0 {
+                return Some(false);
+            }
+            if let Some(stepexp) = step {
+                if let Some(stepterm) = stepexp.as_term() {
+                    if let Term::Int(_s) = stepterm {
                         return Some(true);
                     }
+                } else {
+                    return Some(true);
                 }
-                return Some(i <= o);
             }
+            return Some(i <= o);
         }
         None
     }

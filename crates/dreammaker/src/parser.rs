@@ -1758,16 +1758,15 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
             let result = leading!(self.simple_statement(false, vars));
 
             // check for a label `ident:`
-            if let Statement::Expr(ref expr) = result {
-                if let Some(Term::Ident(name)) = expr.as_term() {
-                    if let Some(()) = self.exact(Token::Punct(Punctuation::Colon))? {
-                        // it's a label! check for a block
-                        return spanned(Statement::Label {
-                            name: name.to_owned(),
-                            block: require!(self.block(loop_ctx)),
-                        });
-                    }
-                }
+            if let Statement::Expr(ref expr) = result
+                && let Some(Term::Ident(name)) = expr.as_term()
+                && let Some(()) = self.exact(Token::Punct(Punctuation::Colon))?
+            {
+                // it's a label! check for a block
+                return spanned(Statement::Label {
+                    name: name.to_owned(),
+                    block: require!(self.block(loop_ctx)),
+                });
             }
 
             require!(self.statement_terminator());
@@ -2075,11 +2074,11 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
             };
 
             // If we're a sub-expression within a ternary expression, don't try to read further than our parent's precedence would allow
-            if let Some(strength) = strength {
-                if info.strength > strength {
-                    self.put_back(Token::Punct(info.token));
-                    break;
-                }
+            if let Some(strength) = strength
+                && info.strength > strength
+            {
+                self.put_back(Token::Punct(info.token));
+                break;
             }
 
             // trampoline high-strength expression parts as the lhs of the newly found op

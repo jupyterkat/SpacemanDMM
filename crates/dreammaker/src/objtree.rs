@@ -197,10 +197,10 @@ impl Type {
     ) -> Option<&'a VarDeclaration> {
         let mut current = Some(self);
         while let Some(ty) = current {
-            if let Some(var) = ty.vars.get(name) {
-                if let Some(ref decl) = var.declaration {
-                    return Some(decl);
-                }
+            if let Some(var) = ty.vars.get(name)
+                && let Some(ref decl) = var.declaration
+            {
+                return Some(decl);
             }
             current = objtree.parent_of(ty);
         }
@@ -446,10 +446,10 @@ impl<'a> TypeRef<'a> {
     pub fn get_proc_declaration(self, name: &str) -> Option<&'a ProcDeclaration> {
         let mut current: Option<TypeRef<'a>> = Some(self);
         while let Some(ty) = current {
-            if let Some(proc) = ty.get().procs.get(name) {
-                if let Some(decl) = proc.declaration.as_ref() {
-                    return Some(decl);
-                }
+            if let Some(proc) = ty.get().procs.get(name)
+                && let Some(decl) = proc.declaration.as_ref()
+            {
+                return Some(decl);
             }
             current = ty.parent_type();
         }

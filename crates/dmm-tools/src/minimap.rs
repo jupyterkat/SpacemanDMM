@@ -376,10 +376,10 @@ impl<'a> GetVar<'a> for Atom<'a> {
     }
 
     fn get_var_inner(&self, key: &str, objtree: &'a ObjectTree) -> Option<&'a Constant> {
-        if let Some(prefab) = self.prefab {
-            if let Some(v) = prefab.get(key) {
-                return Some(v);
-            }
+        if let Some(prefab) = self.prefab
+            && let Some(v) = prefab.get(key)
+        {
+            return Some(v);
         }
         let mut current = Some(self.type_);
         while let Some(t) = current.take() {
@@ -589,7 +589,7 @@ impl<'s> Sprite<'s> {
             ofs_y: pixel_y + pixel_z + step_y,
             plane: plane_of(objtree, vars),
             layer: layer_of(objtree, vars),
-            matrix: matrix.map(|item| item.try_into().ok()).flatten(),
+            matrix: matrix.and_then(|item| item.try_into().ok()),
         }
     }
 }

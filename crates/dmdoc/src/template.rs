@@ -342,7 +342,7 @@ pub(crate) fn dm_type(ty: &Type) -> Markup {
     } = *ty;
     base(
         env,
-        &base_href,
+        base_href,
         &display(path),
         &display(""),
         &html! {

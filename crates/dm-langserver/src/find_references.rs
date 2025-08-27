@@ -792,10 +792,10 @@ impl<'o> WalkProc<'o> {
                 }
             }
             Follow::ProcReference(name) => {
-                if let Some(ty) = lhs.basic_type() {
-                    if let Some(decl) = ty.get_proc_declaration(name) {
-                        self.tab.use_symbol(decl.id, location);
-                    }
+                if let Some(ty) = lhs.basic_type()
+                    && let Some(decl) = ty.get_proc_declaration(name)
+                {
+                    self.tab.use_symbol(decl.id, location);
                 }
                 StaticType::None
             }

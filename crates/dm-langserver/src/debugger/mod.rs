@@ -210,15 +210,15 @@ fn get_proc<'o>(
     }
     let typename = bits.join("/");
 
-    if let Some(ty) = objtree.find(&typename) {
-        if let Some(ty_proc) = ty.get().procs.get(procname) {
-            // Don't consider (most) builtins against the override_id count.
-            return ty_proc
-                .value
-                .iter()
-                .skip_while(|pv| pv.location.is_builtins() && !STDDEF_PROCS.contains(&proc_ref))
-                .nth(override_id);
-        }
+    if let Some(ty) = objtree.find(&typename)
+        && let Some(ty_proc) = ty.get().procs.get(procname)
+    {
+        // Don't consider (most) builtins against the override_id count.
+        return ty_proc
+            .value
+            .iter()
+            .skip_while(|pv| pv.location.is_builtins() && !STDDEF_PROCS.contains(&proc_ref))
+            .nth(override_id);
     }
     None
 }
@@ -921,8 +921,8 @@ handle_request! {
                     if let Some(proc) = self.db.get_proc(&ex_frame.proc, ex_frame.override_id) {
                         if proc.location.is_builtins() {
                             // `stddef.dm` proc.
-                            if let Some(stddef_dm_info) = self.stddef_dm_info.as_ref() {
-                                if let Some(proc) = get_proc(&stddef_dm_info.objtree, &ex_frame.proc, ex_frame.override_id) {
+                            if let Some(stddef_dm_info) = self.stddef_dm_info.as_ref()
+                                && let Some(proc) = get_proc(&stddef_dm_info.objtree, &ex_frame.proc, ex_frame.override_id) {
                                     dap_frame.source = Some(Source {
                                         name: Some("stddef.dm".to_owned()),
                                         sourceReference: Some(STDDEF_SOURCE_REFERENCE),
@@ -931,7 +931,6 @@ handle_request! {
                                     dap_frame.line = i64::from(proc.location.line);
                                     //dap_frame.column = i64::from(proc.location.column);
                                 }
-                            }
                         } else {
                             // Normal proc.
                             let path = self.db.files.get_path(proc.location.file);
@@ -987,8 +986,8 @@ handle_request! {
                     if let Some(proc) = self.db.get_proc(&aux_proc.path, aux_proc.override_id as usize) {
                         if proc.location.is_builtins() {
                             // `stddef.dm` proc.
-                            if let Some(stddef_dm_info) = self.stddef_dm_info.as_ref() {
-                                if let Some(proc) = get_proc(&stddef_dm_info.objtree, &aux_proc.path, aux_proc.override_id as usize) {
+                            if let Some(stddef_dm_info) = self.stddef_dm_info.as_ref()
+                                && let Some(proc) = get_proc(&stddef_dm_info.objtree, &aux_proc.path, aux_proc.override_id as usize) {
                                     dap_frame.source = Some(Source {
                                         name: Some("stddef.dm".to_owned()),
                                         sourceReference: Some(STDDEF_SOURCE_REFERENCE),
@@ -997,7 +996,6 @@ handle_request! {
                                     dap_frame.line = i64::from(proc.location.line);
                                     //dap_frame.column = i64::from(proc.location.column);
                                 }
-                            }
                         } else {
                             // Normal proc.
                             let path = self.db.files.get_path(proc.location.file);
@@ -1389,11 +1387,10 @@ handle_request! {
 
     on Source(&mut self, params) {
         let mut source_reference = params.sourceReference;
-        if let Some(source) = params.source {
-            if let Some(reference) = source.sourceReference {
+        if let Some(source) = params.source
+            && let Some(reference) = source.sourceReference {
                 source_reference = reference;
             }
-        }
 
         if source_reference != STDDEF_SOURCE_REFERENCE {
             return Err(Box::new(GenericError("Unknown source reference")));

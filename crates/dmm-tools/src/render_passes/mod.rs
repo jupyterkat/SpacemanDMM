@@ -603,15 +603,15 @@ impl RenderPass for FancyLayers {
         _arena: &'a typed_arena::Arena<String>,
     ) {
         // dual layering of vents 2: add abovefloor overlay
-        if atom.istype("/obj/machinery/atmospherics/components/unary/") {
-            if let Some(aboveground) = unary_aboveground(atom, objtree) {
-                overlays.push(Sprite {
-                    icon_state: aboveground,
-                    // use original layer, not modified layer above
-                    layer: crate::minimap::layer_of(objtree, atom),
-                    ..atom.sprite
-                });
-            }
+        if atom.istype("/obj/machinery/atmospherics/components/unary/")
+            && let Some(aboveground) = unary_aboveground(atom, objtree)
+        {
+            overlays.push(Sprite {
+                icon_state: aboveground,
+                // use original layer, not modified layer above
+                layer: crate::minimap::layer_of(objtree, atom),
+                ..atom.sprite
+            });
         }
     }
 }

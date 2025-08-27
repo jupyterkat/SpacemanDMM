@@ -273,11 +273,11 @@ trait WithFixHint {
 
 impl WithFixHint for DMError {
     fn with_fix_hint(mut self, analysis: &Analysis) -> Self {
-        if let Some((loc, desc)) = analysis.fix_hint.clone() {
-            if !loc.is_builtins() {
-                // Don't try to tell people to edit the builtins.
-                self.add_note(loc, desc);
-            }
+        if let Some((loc, desc)) = analysis.fix_hint.clone()
+            && !loc.is_builtins()
+        {
+            // Don't try to tell people to edit the builtins.
+            self.add_note(loc, desc);
         }
         self
     }
@@ -494,12 +494,11 @@ impl<'o> ProcDirective<'o> {
     }
 
     fn try_copy_from_parent(&mut self, proc: ProcRef<'o>) {
-        if self.directive.get(&proc).is_none() {
-            if let Some(parent) = proc.parent_proc() {
-                if let Some((_, true, location)) = self.get_self_or_parent(parent) {
-                    let _ = self.insert(proc, true, location);
-                }
-            }
+        if self.directive.get(&proc).is_none()
+            && let Some(parent) = proc.parent_proc()
+            && let Some((_, true, location)) = self.get_self_or_parent(parent)
+        {
+            let _ = self.insert(proc, true, location);
         }
     }
 }
@@ -698,21 +697,20 @@ impl<'o> AnalyzeObjectTree<'o> {
             }
         };
 
-        if procdirective.set_at_definition {
-            if let Some(procdef) = &mut proc.get_declaration() {
-                if procdef.location != proc.get().location {
-                    error(
-                        location,
-                        format!(
-                            "Can't define procs {} outside their initial definition",
-                            directive
-                        ),
-                    )
-                    .set_severity(Severity::Warning)
-                    .register(self.context);
-                    return;
-                }
-            }
+        if procdirective.set_at_definition
+            && let Some(procdef) = &mut proc.get_declaration()
+            && procdef.location != proc.get().location
+        {
+            error(
+                location,
+                format!(
+                    "Can't define procs {} outside their initial definition",
+                    directive
+                ),
+            )
+            .set_severity(Severity::Warning)
+            .register(self.context);
+            return;
         }
 
         match directive_value_to_truthy(expr, location) {
@@ -875,14 +873,14 @@ impl<'o> AnalyzeObjectTree<'o> {
     pub fn gather_settings(&mut self, proc: ProcRef<'o>, code: &'o [Spanned<Statement>]) {
         let proc_location = proc.get().location;
         // Need to extract OUR declaration, and not our parent's. so we do the stupid
-        if let Some(proc_type) = proc.ty().get().procs.get(proc.name()) {
-            if let Some(declaration) = &proc_type.declaration {
-                let proc_flags = declaration.flags;
-                if proc_flags.is_final() {
-                    // lemon todo: this should run, but it doesn't appear to trigger an error like I'd want. needs looking into imo
-                    if let Err(error) = self.must_not_override.insert(proc, true, proc_location) {
-                        self.context.register_error(error);
-                    }
+        if let Some(proc_type) = proc.ty().get().procs.get(proc.name())
+            && let Some(declaration) = &proc_type.declaration
+        {
+            let proc_flags = declaration.flags;
+            if proc_flags.is_final() {
+                // lemon todo: this should run, but it doesn't appear to trigger an error like I'd want. needs looking into imo
+                if let Err(error) = self.must_not_override.insert(proc, true, proc_location) {
+                    self.context.register_error(error);
                 }
             }
         }
@@ -951,10 +949,11 @@ impl<'o> AnalyzeObjectTree<'o> {
                             }
                         }
                         "invisibility" => {
-                            if let Some(Term::Int(i)) = value.as_term() {
-                                if *i >= 0 && *i <= 100 {
-                                    continue;
-                                }
+                            if let Some(Term::Int(i)) = value.as_term()
+                                && *i >= 0
+                                && *i <= 100
+                            {
+                                continue;
                             }
                             error(statement.location, "set invisibility must be 0-100")
                                 .set_severity(Severity::Warning)
@@ -1396,42 +1395,39 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
 
         if let Some(parent) = self.proc_ref.parent_proc() {
             if let Some((proc, true, location)) = self.env.private.get_self_or_parent(self.proc_ref)
+                && proc != self.proc_ref
             {
-                if proc != self.proc_ref {
-                    error(
-                        self.proc_ref.location,
-                        format!("proc overrides private parent, prohibited by {}", proc),
-                    )
-                    .with_note(location, "prohibited by this private_proc annotation")
-                    .with_errortype("private_proc")
-                    .register(self.context);
-                }
+                error(
+                    self.proc_ref.location,
+                    format!("proc overrides private parent, prohibited by {}", proc),
+                )
+                .with_note(location, "prohibited by this private_proc annotation")
+                .with_errortype("private_proc")
+                .register(self.context);
             }
             if let Some((proc, true, location)) =
                 self.env.must_not_override.get_self_or_parent(self.proc_ref)
+                && proc != self.proc_ref
             {
-                if proc != self.proc_ref {
-                    error(
-                        self.proc_ref.location,
-                        format!("proc overrides parent, prohibited by {}", proc),
-                    )
-                    .with_note(location, "prohibited by this must_not_override annotation")
-                    .with_errortype("must_not_override")
-                    .register(self.context);
-                }
+                error(
+                    self.proc_ref.location,
+                    format!("proc overrides parent, prohibited by {}", proc),
+                )
+                .with_note(location, "prohibited by this must_not_override annotation")
+                .with_errortype("must_not_override")
+                .register(self.context);
             }
-            if !self.calls_parent {
-                if let Some((proc, true, location)) =
+            if !self.calls_parent
+                && let Some((proc, true, location)) =
                     self.env.must_call_parent.get_self_or_parent(self.proc_ref)
-                {
-                    error(
-                        self.proc_ref.location,
-                        format!("proc never calls parent, required by {}", proc),
-                    )
-                    .with_note(location, "required by this must_call_parent annotation")
-                    .with_errortype("must_call_parent")
-                    .register(self.context);
-                }
+            {
+                error(
+                    self.proc_ref.location,
+                    format!("proc never calls parent, required by {}", proc),
+                )
+                .with_note(location, "required by this must_call_parent annotation")
+                .with_errortype("must_call_parent")
+                .register(self.context);
             }
             if !parent.is_builtin()
                 && self.proc_ref.ty() == parent.ty()
@@ -1493,12 +1489,12 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             error(location, "control flow condition is a constant evalutation")
                 .with_errortype("control_condition_static")
                 .register(self.context);
-        } else if let Some(term) = expression.as_term() {
-            if term.is_static() {
-                error(location, "control flow condition is a static term")
-                    .with_errortype("control_condition_static")
-                    .register(self.context);
-            }
+        } else if let Some(term) = expression.as_term()
+            && term.is_static()
+        {
+            error(location, "control flow condition is a static term")
+                .with_errortype("control_condition_static")
+                .register(self.context);
         }
     }
 
@@ -1512,27 +1508,18 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             Statement::Expr(expr) => {
                 match expr {
                     Expression::Base { term, follow } => {
-                        if let Term::Call(call, vec) = &term.elem {
-                            if !follow.iter().any(|f| matches!(f.elem, Follow::Call(..))) {
-                                if let Some(proc) = self.ty.get_proc(call) {
-                                    if let Some((_, _, loc)) =
-                                        self.env.must_be_pure.get_self_or_parent(proc)
-                                    {
-                                        error(
-                                            location,
-                                            format!(
-                                                "call to pure proc {} discards return value",
-                                                call
-                                            ),
-                                        )
-                                        .with_note(
-                                            loc,
-                                            "prohibited by this must_be_pure annotation",
-                                        )
-                                        .register(self.context);
-                                    }
-                                }
-                            }
+                        if let Term::Call(call, vec) = &term.elem
+                            && !follow.iter().any(|f| matches!(f.elem, Follow::Call(..)))
+                            && let Some(proc) = self.ty.get_proc(call)
+                            && let Some((_, _, loc)) =
+                                self.env.must_be_pure.get_self_or_parent(proc)
+                        {
+                            error(
+                                location,
+                                format!("call to pure proc {} discards return value", call),
+                            )
+                            .with_note(loc, "prohibited by this must_be_pure annotation")
+                            .register(self.context);
                         }
                     }
                     Expression::BinaryOp {
@@ -1541,14 +1528,14 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                         rhs,
                     } => {
                         let lhsanalysis = self.visit_expression(location, lhs, None, local_vars);
-                        if let Some(impurity) = lhsanalysis.is_impure {
-                            if impurity {
-                                self.env.impure_procs.insert_violator(
-                                    self.proc_ref,
-                                    "purity breaking << on expression",
-                                    location,
-                                );
-                            }
+                        if let Some(impurity) = lhsanalysis.is_impure
+                            && impurity
+                        {
+                            self.env.impure_procs.insert_violator(
+                                self.proc_ref,
+                                "purity breaking << on expression",
+                                location,
+                            );
                         }
                     }
                     _ => {}
@@ -1657,12 +1644,10 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     };
                 }
                 if let Some(else_arm) = else_arm {
-                    if alwaystrue {
-                        if let Some(else_expr) = else_arm.first() {
-                            error(else_expr.location ,"unreachable else block, preceeding if/elseif condition(s) are always true")
+                    if alwaystrue && let Some(else_expr) = else_arm.first() {
+                        error(else_expr.location ,"unreachable else block, preceeding if/elseif condition(s) are always true")
                                 .with_errortype("unreachable_code")
                                 .register(self.context);
-                        }
                     }
                     let state = self.visit_block(else_arm, &mut local_vars.clone());
                     allterm.merge_false(state);
@@ -1775,19 +1760,18 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     self.visit_var(location, var_type, name, Some(start), &mut scoped_locals);
                 }
                 let mut state = self.visit_block(block, &mut scoped_locals);
-                if let Some(startterm) = start.as_term() {
-                    if let Some(endterm) = end.as_term() {
-                        if let Some(validity) = startterm.valid_for_range(endterm, step.as_ref()) {
-                            if !validity {
-                                error(
-                                    location,
-                                    "for range loop body is never reached due to invalid range",
-                                )
-                                .register(self.context);
-                            } else {
-                                return state;
-                            }
-                        }
+                if let Some(startterm) = start.as_term()
+                    && let Some(endterm) = end.as_term()
+                    && let Some(validity) = startterm.valid_for_range(endterm, step.as_ref())
+                {
+                    if !validity {
+                        error(
+                            location,
+                            "for range loop body is never reached due to invalid range",
+                        )
+                        .register(self.context);
+                    } else {
+                        return state;
                     }
                 }
                 state.end_loop();
@@ -2802,42 +2786,34 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                     if let Some(proc) = ty.get_proc(name) {
                         if let Some((privateproc, true, decllocation)) =
                             self.env.private.get_self_or_parent(proc)
+                            && ty != privateproc.ty()
                         {
-                            if ty != privateproc.ty() {
-                                error(
-                                    location,
-                                    format!(
-                                        "{} attempting to call private proc {}, types do not match",
-                                        self.proc_ref, privateproc
-                                    ),
-                                )
-                                .with_errortype("private_proc")
-                                .with_note(
-                                    decllocation,
-                                    "prohibited by this private_proc annotation",
-                                )
-                                .register(self.context);
-                                return Analysis::empty(); // dont double up with visit_call()
-                            }
+                            error(
+                                location,
+                                format!(
+                                    "{} attempting to call private proc {}, types do not match",
+                                    self.proc_ref, privateproc
+                                ),
+                            )
+                            .with_errortype("private_proc")
+                            .with_note(decllocation, "prohibited by this private_proc annotation")
+                            .register(self.context);
+                            return Analysis::empty(); // dont double up with visit_call()
                         }
                         if let Some((protectedproc, true, decllocation)) =
                             self.env.protected.get_self_or_parent(proc)
+                            && !self.ty.is_subtype_of(protectedproc.ty().get())
                         {
-                            if !self.ty.is_subtype_of(protectedproc.ty().get()) {
-                                error(
-                                    location,
-                                    format!(
-                                        "{} attempting to call protected proc {}",
-                                        self.proc_ref, protectedproc
-                                    ),
-                                )
-                                .with_errortype("protected_proc")
-                                .with_note(
-                                    decllocation,
-                                    "prohibited by this protected_proc annotation",
-                                )
-                                .register(self.context);
-                            }
+                            error(
+                                location,
+                                format!(
+                                    "{} attempting to call protected proc {}",
+                                    self.proc_ref, protectedproc
+                                ),
+                            )
+                            .with_errortype("protected_proc")
+                            .with_note(decllocation, "prohibited by this protected_proc annotation")
+                            .register(self.context);
                         }
                         self.visit_call(location, ty, proc, arguments, false, local_vars)
                     } else {
@@ -2927,14 +2903,14 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
         operator: &str,
         local_vars: &mut HashMap<String, LocalVar<'o>, RandomState>,
     ) -> Analysis<'o> {
-        if let Some(impurity) = rhs.is_impure {
-            if impurity {
-                self.env.impure_procs.insert_violator(
-                    self.proc_ref,
-                    &format!("{} done on non-local var", operator),
-                    location,
-                );
-            }
+        if let Some(impurity) = rhs.is_impure
+            && impurity
+        {
+            self.env.impure_procs.insert_violator(
+                self.proc_ref,
+                &format!("{} done on non-local var", operator),
+                location,
+            );
         }
         let typeerror = match rhs.static_ty {
             StaticType::None => return Analysis::empty(),
@@ -3074,7 +3050,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 );
             }
             Expression::Base { term, follow } => {
-                if follow.len() > 0 {
+                if !follow.is_empty() {
                     error(
                         location,
                         "filter() flag fields cannot have unary ops or field accesses",
@@ -3138,19 +3114,19 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             location,
             self.inside_newcontext != 0,
         ));
-        if let Some((privateproc, true, decllocation)) = self.env.private.get_self_or_parent(proc) {
-            if self.ty != privateproc.ty() {
-                error(
-                    location,
-                    format!(
-                        "{} attempting to call private proc {}, types do not match",
-                        self.proc_ref, privateproc
-                    ),
-                )
-                .with_errortype("private_proc")
-                .with_note(decllocation, "prohibited by this private_proc annotation")
-                .register(self.context);
-            }
+        if let Some((privateproc, true, decllocation)) = self.env.private.get_self_or_parent(proc)
+            && self.ty != privateproc.ty()
+        {
+            error(
+                location,
+                format!(
+                    "{} attempting to call private proc {}, types do not match",
+                    self.proc_ref, privateproc
+                ),
+            )
+            .with_errortype("private_proc")
+            .with_note(decllocation, "prohibited by this private_proc annotation")
+            .register(self.context);
         }
 
         // identify and register kwargs used
@@ -3264,18 +3240,18 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             }
         }
         if proc.ty().is_root() && proc.name() == "astype" {
-            if let Some(type_val) = param_idx_map.get(&1) {
-                if let Some(Constant::Prefab(path)) = type_val.clone().value {
-                    let type_val = path
-                        .path
-                        .iter()
-                        .map(|x| "/".to_owned() + x)
-                        .collect::<Vec<_>>()
-                        .join("");
+            if let Some(type_val) = param_idx_map.get(&1)
+                && let Some(Constant::Prefab(path)) = type_val.clone().value
+            {
+                let type_val = path
+                    .path
+                    .iter()
+                    .map(|x| "/".to_owned() + x)
+                    .collect::<Vec<_>>()
+                    .join("");
 
-                    if let Some(path) = self.objtree.find(&type_val) {
-                        return Analysis::from_static_type(path);
-                    }
+                if let Some(path) = self.objtree.find(&type_val) {
+                    return Analysis::from_static_type(path);
                 }
             }
 
@@ -3321,7 +3297,7 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                 return Analysis::empty();
             };
             for arg in param_name_map.keys() {
-                if *arg != "type" && !arglist.iter().any(|&x| x == *arg) {
+                if *arg != "type" && !arglist.contains(arg) {
                     error(
                         location,
                         format!(
@@ -3335,18 +3311,17 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
             }
             if let Some((flagfieldname, exclusive, can_be_zero, valid_flags)) =
                 VALID_FILTER_FLAGS.get(typevalue)
+                && let Some(flagsvalue) = param_expr_map.get(flagfieldname)
             {
-                if let Some(flagsvalue) = param_expr_map.get(flagfieldname) {
-                    self.check_filter_flag(
-                        flagsvalue,
-                        *can_be_zero,
-                        location,
-                        typevalue,
-                        valid_flags,
-                        flagfieldname,
-                        *exclusive,
-                    );
-                }
+                self.check_filter_flag(
+                    flagsvalue,
+                    *can_be_zero,
+                    location,
+                    typevalue,
+                    valid_flags,
+                    flagfieldname,
+                    *exclusive,
+                );
             }
         }
 

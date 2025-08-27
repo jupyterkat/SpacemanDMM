@@ -893,10 +893,10 @@ impl<'ctx> Lexer<'ctx> {
                 }
             }
 
-            if buffer[0] != 0 {
-                if let Some(ref mut comment) = comment {
-                    comment.text.push(buffer[0] as char);
-                }
+            if buffer[0] != 0
+                && let Some(ref mut comment) = comment
+            {
+                comment.text.push(buffer[0] as char);
             }
         }
 
@@ -926,10 +926,11 @@ impl<'ctx> Lexer<'ctx> {
         }
 
         while let Some(ch) = self.next() {
-            if ch != b'\r' && ch != b'\n' {
-                if let Some(ref mut comment) = comment {
-                    comment.text.push(ch as char);
-                }
+            if ch != b'\r'
+                && ch != b'\n'
+                && let Some(ref mut comment) = comment
+            {
+                comment.text.push(ch as char);
             }
 
             if ch == b'\r' {
@@ -1029,20 +1030,20 @@ impl<'ctx> Lexer<'ctx> {
             // Try to parse it as a float instead - this will catch numbers
             // that are formatted like integers but are out of the range of our
             // integer type.
-            if radix == 10 {
-                if let Ok(val) = f32::from_str(&buf) {
-                    let val_str = val.to_string();
-                    if val_str != buf {
-                        self.error(format!(
-                            "precision loss of integer constant: \"{}\" to {}",
-                            buf, val
-                        ))
-                        .set_severity(Severity::Warning)
-                        .with_errortype("integer_precision_loss")
-                        .register(self.context);
-                    }
-                    return Token::Float(val);
+            if radix == 10
+                && let Ok(val) = f32::from_str(&buf)
+            {
+                let val_str = val.to_string();
+                if val_str != buf {
+                    self.error(format!(
+                        "precision loss of integer constant: \"{}\" to {}",
+                        buf, val
+                    ))
+                    .set_severity(Severity::Warning)
+                    .with_errortype("integer_precision_loss")
+                    .register(self.context);
                 }
+                return Token::Float(val);
             }
             self.context.register_error(self.error(format!(
                 "bad base-{} integer \"{}\": {}",
